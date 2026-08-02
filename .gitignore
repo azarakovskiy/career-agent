@@ -1,0 +1,6 @@
+# prototype runtime artifacts — not source
+prototype/state.json
+prototype/export.md
+
+__pycache__/
+*.pyc

@@ -1,4 +1,4 @@
-# MVP interaction loop — prototype
+# MVP interaction loop — prototype v2
 
 Asset for wayfinder ticket [Choose the MVP interaction loop and local interface](https://github.com/azarakovskiy/career-agent/issues/3).
 
@@ -7,35 +7,47 @@ CV and then shares more context over time — and which local surface ships it f
 
 **Proposed loop (5 beats).** Onboard with a CV → see the extracted profile → share more
 context (repeat) → see the capability map vs one role profile → see recommendations.
-Correction / retraction / erasure are the trust floor. Everything else from the
-glossary/decisions (#2, #8) is honored: immutable evidence, revisioned profiles,
-what-changed feedback, stale-until-regenerated recommendations, Known/Inferred/Unknown.
+Correction / retraction / erasure are the trust floor. Every change creates a revisioned
+snapshot with a what-changed diff; recommendations are marked STALE until regenerated.
 
 ## Run it
 
 ```bash
-python3 prototype/tui.py        # drive the loop by hand
-python3 prototype/core.py       # self-check of the pure state machine
+python3 prototype/tui.py             # interactive — one screen, full state
+python3 prototype/tui.py --scenario  # scripted test of the whole loop (exit code)
+python3 prototype/tui.py --reset     # wipe saved state, start fresh
+python3 prototype/core.py            # pure-state self-check
 ```
 
-Keys: `[a]` add evidence · `[p]` profile · `[c]` capability map · `[r]` recommendations ·
-`[g]` generate recs · `[x]` correct claim · `[t]` retract evidence · `[e]` erase evidence · `[q]` quit
+Interactive menu: `[1]` add evidence (paste text **or** a file name under `cv/`, read-only)
+· `[2]` correct claim · `[3]` retract evidence · `[4]` erase evidence · `[5]` regenerate
+recs · `[6]` export profile · `[0]` quit.
+
+## What v2 changed (user feedback)
+
+| Complaint | Fix |
+| --- | --- |
+| Navigation confusing (hidden views) | One screen shows the whole pipeline — evidence, profile, capability map, recommendations — no views to flip between; numbered menu |
+| Data flow confusing | `TIMELINE` header shows every revision and its diff (`P1 5 claims · P2 +AI/LLM…`); provenance arrows (`e1 e2`) on every claim; STALE banner ties profile changes to recommendations |
+| Data not saved | State persists to `prototype/state.json` after every action, loaded on start (`--reset` to wipe); `[6]` exports a markdown profile snapshot |
+| Hard to test | `--scenario` replays a scripted 8-step loop with assertions and a save/load round-trip check; the reducer stays pure and portable |
 
 ## Files
 
-- `core.py` — pure reducer `(state, action) => state`; portable, no I/O. The part worth
-  keeping past the prototype.
-- `tui.py` — throwaway terminal shell over core.
-- `WEB_VARIANT.md` — the same loop as a local web app (ASCII wireframes), for the
-  interface decision.
+- `core.py` — pure reducer `(state, action) => state`, plus `serialize`/`deserialize`
+  (a concrete candidate for the local-first persistence representation question on the
+  wayfinder map). No I/O — the part worth keeping.
+- `tui.py` — throwaway shell: rendering, menu, persistence, scenario runner.
+- `cv/sample-notes.md` — sample evidence for the read-only file-ingestion path.
+- `WEB_VARIANT.md` — the same loop as a local web app (ASCII wireframes).
 
 ## Simplifications (prototype only)
 
 - One claim per capability (stable claim identity keyed by capability); real claims are
   finer-grained propositions.
 - Fake deterministic keyword extractor — stands in for the real extraction pipeline.
-- Conflict-side selection omitted (decision #2 covers it); retract/erase/correct cover
-  the minimum trust controls.
+- Conflict-side selection omitted (evidence-lifecycle contract covers it); retract/erase/
+  correct cover the minimum trust controls.
 
 ## NOTES — verdict (from the HITL session, resolved on the ticket)
 

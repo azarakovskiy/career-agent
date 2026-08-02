@@ -6,7 +6,11 @@ starts with a CV and then shares more context over time?
 
 Shape: evidence items -> revisioned profile claims -> capability map vs one
 role profile -> recommendations. Correction / retraction / erasure are the
-trust floor. This module is pure (no I/O, no terminal); tui.py drives it.
+trust floor. This module is pure (no I/O, no terminal); tui.py drives it and
+handles persistence.
+
+The saved state shape (serialize/deserialize) is a concrete candidate for the
+local-first persistence representation question on the wayfinder map.
 
 Simplifications (deliberate, prototype only):
 - One claim per capability (stable claim identity keyed by capability) --
@@ -16,7 +20,13 @@ Simplifications (deliberate, prototype only):
   minimum trust controls the ticket asks for.
 """
 
+import os
 import re
+
+_BASE = os.path.dirname(os.path.abspath(__file__))
+STATE_FILE = os.path.join(_BASE, "state.json")   # "PROTOTYPE — wipe me"
+EXPORT_FILE = os.path.join(_BASE, "export.md")
+CV_DIR = os.path.join(_BASE, "cv")               # read-only, allow-listed evidence root
 
 CAPABILITIES = [
     {"name": "Systems design", "relevance": "high"},
@@ -45,6 +55,9 @@ SAMPLE_CV = ("Senior software engineer, 8 years. Designed and architected a "
              "multi-region Kubernetes platform on AWS. Led a team of four "
              "shipping a payments service. Wrote integration tests with CI/CD. "
              "Mentored two junior engineers.")
+
+STATE_FILE = "prototype/state.json"   # "PROTOTYPE — wipe me"
+EXPORT_FILE = "prototype/export.md"
 
 
 def _pattern(kw):
@@ -107,16 +120,16 @@ def _revision(state):
     return {cap: dict(c) for cap, c in state["claims"].items()}
 
 
-def _diff(state, prev):
-    """Human-readable what-changed summary between revisions."""
+def _diff(prev, now):
+    """What-changed between two revision snapshots (claim dicts)."""
     lines = []
-    now = state["claims"]
     for cap, c in now.items():
         old = prev.get(cap)
         if old is None:
             lines.append(f"+ {cap} ({_status_of(c['confidence'])})")
         elif _status_of(old["confidence"]) != _status_of(c["confidence"]):
-            lines.append(f"~ {cap}: {_status_of(old['confidence'])} -> {_status_of(c['confidence'])}")
+            lines.append(f"~ {cap}: {_status_of(old['confidence'])} -> "
+                         f"{_status_of(c['confidence'])}")
     for cap in prev:
         if cap not in now:
             lines.append(f"- {cap}")
@@ -153,7 +166,7 @@ def _snapshot_revision(state, cause):
     state["rec_stale"] = True
     prev = state["revisions"][-2] if len(state["revisions"]) >= 2 else {}
     state["changes"] = [f"revision P{state['revision']} ({cause}):"]
-    state["changes"] += [f"  {l}" for l in _diff(state, prev)]
+    state["changes"] += [f"  {l}" for l in _diff(prev, state["claims"])]
     return state
 
 
@@ -199,9 +212,6 @@ def reducer(state, action):
                              if e["id"] != action["evidence_id"]]
         state["claims"] = _recompute_claims(state)
         return _snapshot_revision(state, f"evidence e{action['evidence_id']} erased")
-    if t == "show":
-        state["view"] = action["view"]
-        return state
     if t == "recompute_recs":
         state["recommendations"] = _recs_for(state)
         state["rec_from_revision"] = state["revision"]
@@ -211,12 +221,48 @@ def reducer(state, action):
     raise ValueError(f"unknown action {t}")
 
 
+def fresh_state():
+    return {"evidence": [], "next_evidence_id": 1, "claims": {},
+            "revision": 0, "revisions": [], "recommendations": [],
+            "rec_from_revision": 0, "rec_stale": False,
+            "changes": [], "role": "AI-era Senior Software Engineer"}
+
+
 def initial_state(cv=SAMPLE_CV):
-    return reducer({"evidence": [], "next_evidence_id": 1, "claims": {},
-                    "revision": 0, "revisions": [], "recommendations": [],
-                    "rec_from_revision": 0, "rec_stale": False,
-                    "view": "profile", "changes": [],
-                    "role": "AI-era Senior Software Engineer"}, {"type": "onboard", "cv": cv})
+    return reducer(fresh_state(), {"type": "onboard", "cv": cv})
+
+
+def serialize(state):
+    keys = ["evidence", "next_evidence_id", "claims", "revision", "revisions",
+            "recommendations", "rec_from_revision", "rec_stale", "role"]
+    return {"format": "prototype-state-v1", **{k: state[k] for k in keys}}
+
+
+def deserialize(data):
+    assert data.get("format") == "prototype-state-v1", data.get("format")
+    state = {k: data[k] for k in ("evidence", "next_evidence_id", "claims", "revision",
+                                  "revisions", "recommendations", "rec_from_revision",
+                                  "rec_stale", "role")}
+    state["changes"] = [f"loaded from {os.path.basename(STATE_FILE)} — revision P{state['revision']}, "
+                        f"{len(state['evidence'])} evidence items"]
+    return state
+
+
+def roundtrip(state):
+    """save -> load must reproduce the durable state exactly."""
+    return serialize(state) == serialize(deserialize(serialize(state)))
+
+
+def timeline(state):
+    """'P1 5 claims · P2 +AI/LLM product work · P3 AI/LLM: INFERRED->KNOWN'"""
+    parts, prev = [], {}
+    for i, snap in enumerate(state["revisions"], 1):
+        d = _diff(prev, snap)
+        bits = [x for x in d if x != "no claim changes"]
+        label = f"P{i} {len(snap)} claims" if not bits else f"P{i} " + ", ".join(bits)
+        parts.append(label)
+        prev = snap
+    return " · ".join(parts)
 
 
 if __name__ == "__main__":
@@ -228,6 +274,7 @@ if __name__ == "__main__":
                     "text": "Built a RAG pipeline for internal docs with LLM evaluation."})
     assert _cap_status(s["claims"], "AI/LLM product work") == "adjacent"
     assert s["rec_stale"] and s["revision"] == 2
+    assert roundtrip(s), "save/load round-trip failed"
     s = reducer(s, {"type": "recompute_recs"})
     assert s["recommendations"], "expected recs"
     assert not s["rec_stale"] and s["rec_from_revision"] == s["revision"]
@@ -238,5 +285,6 @@ if __name__ == "__main__":
     s = reducer(s, {"type": "retract", "evidence_id": 1})
     assert s["evidence"][0]["status"] == "retracted"
     s = reducer(s, {"type": "recompute_recs"})
-    assert all(r["priority"] >= 2 for r in s["recommendations"]) or s["recommendations"]
+    assert roundtrip(s), "round-trip failed after retract"
+    assert "P1" in timeline(s) and "P2" in timeline(s)
     print("core self-check OK")
