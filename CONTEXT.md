@@ -9,12 +9,15 @@ The initial product is a personal, local-first tool. Its longer-term direction m
 ## Glossary
 
 ### Person
+
 The individual whose work history, capabilities, and career goals are being assessed. The initial MVP is for one person using their own local workspace.
 
 ### Interaction turn
+
 An immutable user-and-agent exchange retained as source history. User-authored content can produce candidate Evidence items; agent-generated summaries or interpretations are not Evidence unless the person explicitly confirms them.
 
 ### Evidence item
+
 A source that supports or fails to support a claim about the person. Examples include a CV statement, repository, technical article, project artifact, or user-provided interaction. Evidence items retain their source and provenance and are not silently rewritten.
 
 Each upload or submission is a distinct immutable Evidence item. For example, a newly uploaded CV is new evidence rather than an in-place edit of the previous CV; the earlier item remains preserved and may be linked to the newer item as a revision or supersession relationship.
@@ -26,6 +29,7 @@ Evidence provenance distinguishes when the system recorded an item from when its
 Processing the same Evidence item with the same extractor context is idempotent: retries do not duplicate claims or provenance links. A new upload remains a distinct Evidence item even when its content is identical to an earlier upload.
 
 ### Profile claim
+
 A normalized statement about the person derived from one or more evidence items or explicitly supplied by the person. A claim records its provenance and the extractor's confidence; Known, Inferred, or Unknown is derived from the current confidence and evidence context rather than stored as a separate status.
 
 Each normalized proposition has a stable Profile claim identity. New Evidence items attach to that identity; changes from recomputation are captured in revisioned Current-profile snapshots. A materially different proposition is a new linked claim.
@@ -51,21 +55,35 @@ Selecting one side of a conflict is explicit confirmation of that Evidence: it a
 User-requested removal has two meanings: retraction preserves an Evidence item for provenance but excludes it from current derivation; erasure permanently removes the source and dependent derived data, retaining only minimal reference metadata when needed for coherence.
 
 ### Current profile
+
 The persistent, evolving set of profile claims used for the latest analysis. Every evidence, correction, retraction, or erasure change creates a new revisioned snapshot; the profile is derived from evidence and user input, not a replacement for the original evidence items. When no active support remains, a retracted claim stays historical but is excluded from the active profile; downstream capability evaluation represents it as Unknown, while erasure removes dependent derived claim data. When a conflict awaits the person’s choice, the last selected value remains active but is marked conflicted and stale.
 
+### Role stereotype
+
+An umbrella description of a kind of role that many concrete job positions fall under, e.g. "AI-era Senior Software Engineer" covers "Staff Backend Engineer at a fintech" and "Senior Full-Stack Engineer at a startup". The MVP compares the person's current profile against one selected role stereotype; concrete job positions are a separate, later concern.
+
+### Job position
+
+A concrete, specific opening or role at a company, e.g. "Senior Backend Engineer at Acme Payments, 2025 posting". Job positions are not part of the MVP role contract: the MVP compares against the role stereotype, and job-specific tailoring is out of scope.
+
 ### Role profile
-A transparent, versioned description of a target role: its capabilities, evidence expectations, and other criteria used for comparison. In the MVP, the person selects one role profile; the system does not discover the role autonomously.
+
+A transparent, versioned description of a role stereotype: its capabilities, evidence expectations, and other criteria used for comparison. In the MVP, the person selects one role profile; the system does not discover the role autonomously.
 
 ### Capability
+
 A meaningful ability relevant to a role profile. A capability may be supported by Known evidence, suggested by Inferred evidence, or remain Unknown.
 
 ### Capability map
+
 The comparison of the current profile against a role profile, including supported, adjacent, and missing capabilities with traceable evidence.
 
 ### Recommendation
+
 A derived, prioritized suggestion for a portfolio project, work activity, or learning action. Recommendations are generated from a specific Current-profile revision, Role profile, and evaluation/model version; they are not authoritative source data and become stale when that profile revision changes. Recommendations may continue from a conflicted profile revision but must carry a visible warning.
 
 ### Known / Inferred / Unknown
+
 The evidence-status vocabulary:
 
 - **Known**: supported by concrete, traceable evidence or explicit user confirmation.
@@ -77,9 +95,11 @@ Automatic extraction records a confidence score and provenance for the source an
 Changing the extractor or model does not reprocess existing Evidence in the MVP. Existing claims retain their original extraction context; the new context applies only to newly processed Evidence.
 
 ### Local-first persistence
+
 The MVP stores the person’s source evidence, profile state, provenance, and generated outputs in the person’s local workspace. The domain model should keep a clear storage boundary so the same durable state can later be persisted in an external database for multi-user or hosted operation.
 
 ### Market relevance
+
 A future capability that keeps role profiles and capability expectations aligned with the changing job market. It is not autonomous market discovery in the MVP.
 
 ## Agreed MVP boundaries
