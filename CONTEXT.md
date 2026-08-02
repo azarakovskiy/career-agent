@@ -70,6 +70,10 @@ A concrete, specific opening or role at a company, e.g. "Senior Backend Engineer
 
 A transparent, versioned description of a role stereotype: its capabilities, evidence expectations, and other criteria used for comparison. In the MVP, the person selects one role profile; the system does not discover the role autonomously.
 
+### Evidence expectation
+
+A plain-language statement, carried by each capability in a role profile, of what would establish that capability (e.g. "designed and shipped a system others depend on"). Evidence expectations are advisory: they are shown to the person to read, and do not mechanically gate Known/Inferred/Unknown status.
+
 ### Capability
 
 A meaningful ability relevant to a role profile. A capability may be supported by Known evidence, suggested by Inferred evidence, or remain Unknown.

@@ -100,9 +100,6 @@ Public speaking       ✗ missing · low — not a priority gap
 high/medium gaps (AI/LLM product work, Mentoring), not Public speaking.
 ```
 
-## Open in the contract (next grilling questions)
+## Superseded
 
-- **Evidence expectations:** advisory rubric text (shown above) vs structured criteria?
-- **Versioning:** what bumps the version, what the user sees, traceability into recommendations.
-- **Authoring:** who writes the initial profile; what the user may edit.
-- **Selection:** how the one role is chosen at onboarding.
+All open questions were decided in the grilling session that produced this demo; the decisions live in the resolution of wayfinder ticket #4 (Define the versioned role-profile contract for the MVP). This file is kept as the accepted document-shape artifact.
