@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 # prototype/tui.py
-"""Prototype v2 shell over core.py — one screen showing the whole pipeline,
-state saved to disk after every action.
+"""Prototype v3 shell over core.py — one screen showing the whole pipeline,
+state saved to disk after every action, simulated service latency.
+
+The data is fake but the serving model is not: steps the real product would
+hand to an LLM (claim extraction, recommendation ranking) take ~2s with a
+staged spinner; code-served steps (file read, retract/erase recompute, save)
+are near-instant. --fast skips every delay for quick demos.
 
 Run:            python3 prototype/tui.py          (interactive)
+                python3 prototype/tui.py --fast   (skip simulated delays)
                 python3 prototype/tui.py --scenario   (scripted test, exit code)
                 python3 prototype/tui.py --reset      (wipe saved state, start fresh)
 """
@@ -11,6 +17,7 @@ Run:            python3 prototype/tui.py          (interactive)
 import json
 import os
 import sys
+import time
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
@@ -18,6 +25,16 @@ import core  # noqa: E402
 
 B = "\x1b[1m"; D = "\x1b[2m"; R = "\x1b[0m"
 RED = "\x1b[31m"; GRN = "\x1b[32m"; YEL = "\x1b[33m"
+
+FAST = "--fast" in sys.argv  # skip simulated delays (quick demos)
+
+# Simulated serving delays. Fractions are when each stage label appears.
+EXTRACT = [("reading evidence…", 0.02), ("extracting claims…", 0.35),
+           ("scoring confidence…", 0.8)]          # ~2.2s — LLM-bound
+RECS = [("evaluating capability map…", 0.05), ("ranking opportunities…", 0.6),
+        ("writing recommendations…", 0.85)]       # ~1.8s — LLM-bound
+RECOMPUTE = [("recomputing claims…", 0.02)]       # ~0.3s — deterministic
+READ_FILE = [("reading file…", 0.02)]             # ~0.15s — code
 
 
 def _c(st):
@@ -29,9 +46,31 @@ def _trunc(s, n):
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
+def _busy(stages, total):
+    """Simulate an async service call: staged status lines + spinner, then clear.
+    Returns elapsed seconds. All theater — the reducer already ran."""
+    start = time.monotonic()
+    frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    shown, i = 0, 0
+    while True:
+        el = time.monotonic() - start
+        if el >= total:
+            break
+        while shown < len(stages) and el >= stages[shown][1] * total:
+            sys.stdout.write("\r" + " " * 40 + "\r")
+            print(f"  {D}{stages[shown][0]}{R}")
+            shown += 1
+        sys.stdout.write(f"\r  {frames[i % len(frames)]} {el:4.1f}s ")
+        sys.stdout.flush()
+        i += 1
+        time.sleep(0.08)
+    sys.stdout.write("\r" + " " * 40 + "\r")
+    return time.monotonic() - start
+
+
 def render(s):
     L = []
-    L.append(f"{B}CAREER EVIDENCE AGENT — prototype v2{R}   "
+    L.append(f"{B}CAREER EVIDENCE AGENT - prototype v3{R}   "
              f"{D}saved: {os.path.basename(core.STATE_FILE)} · revision P{s['revision']}{R}")
     L.append(f"{B}TIMELINE{R}  {_trunc(core.timeline(s), 80)}")
     for i, ch in enumerate(s["changes"]):
@@ -42,7 +81,7 @@ def render(s):
              f"retract/erase never rewrite originals){R}")
     for e in s["evidence"]:
         mark = f"{GRN}active{R}" if e["status"] == "active" else f"{D}retracted{R}"
-        L.append(f"  {e['id']:<2}{e['kind']:<11}{mark}  {_trunc(e['text'], 62)}")
+        L.append(f"  {e['id']:<2}{e['kind']:<11}{mark}  {_trunc(' '.join(e['text'].split()), 62)}")
 
     L.append("")
     L.append(f"{B}PROFILE{R} {D}(claims from current revision P{s['revision']}){R}")
@@ -142,6 +181,14 @@ def _export(s):
         s["changes"] = [f"export failed: {exc}"]
 
 
+def _maybe_busy(s, stages, total, what):
+    if FAST:
+        return s
+    el = _busy(stages, total)
+    s["changes"].append(f"done in {el:.1f}s — simulated {what}")
+    return s
+
+
 def _dispatch(s, k):
     if k in ("0", "q", "quit"):
         raise SystemExit
@@ -149,7 +196,10 @@ def _dispatch(s, k):
         if k == "1":
             kind, text = _read_evidence()
             if text:
+                if not FAST and kind == "file":
+                    _busy(READ_FILE, 0.15)
                 s = core.reducer(s, {"type": "add_evidence", "kind": kind, "text": text})
+                s = _maybe_busy(s, EXTRACT, 2.2, "LLM extraction")
         elif k == "2":
             n = _to_int(input("  claim # (see PROFILE): ").strip())
             if n is not None and 1 <= n <= len(core.CAPABILITIES):
@@ -157,16 +207,20 @@ def _dispatch(s, k):
                 txt = input("  what is actually true? ").strip()
                 if txt:
                     s = core.reducer(s, {"type": "correct", "claim_id": cap, "text": txt})
+                    s = _maybe_busy(s, EXTRACT, 2.2, "LLM extraction")
         elif k == "3":
             eid = _to_int(input("  evidence id (see EVIDENCE): ").strip())
             if eid:
                 s = core.reducer(s, {"type": "retract", "evidence_id": eid})
+                s = _maybe_busy(s, RECOMPUTE, 0.3, "deterministic recompute")
         elif k == "4":
             eid = _to_int(input("  evidence id (see EVIDENCE): ").strip())
             if eid:
                 s = core.reducer(s, {"type": "erase", "evidence_id": eid})
+                s = _maybe_busy(s, RECOMPUTE, 0.3, "deterministic recompute")
         elif k == "5":
             s = core.reducer(s, {"type": "recompute_recs"})
+            s = _maybe_busy(s, RECS, 1.8, "LLM ranking")
         elif k == "6":
             _export(s)
         else:
@@ -177,6 +231,31 @@ def _dispatch(s, k):
         return s
     _save(s)
     return s
+
+
+def _choose_cv():
+    """Fresh start: let the user point at a CV, like the real product."""
+    try:
+        files = sorted(f for f in os.listdir(core.CV_DIR) if f.endswith(".md"))
+    except OSError:
+        files = []
+    print(f"{B}Onboarding{R} — point me at your CV "
+          f"{D}(read-only view of {os.path.basename(core.CV_DIR)}/){R}")
+    print(f"  {B}[1]{R} built-in sample CV — senior platform engineer, 8 yrs")
+    for i, f in enumerate(files, 2):
+        print(f"  {B}[{i}]{R} {D}cv/{f}{R}")
+    try:
+        n = _to_int(input("  pick a CV: ").strip())
+    except (EOFError, KeyboardInterrupt):
+        return core.SAMPLE_CV
+    if n is not None and 2 <= n <= 1 + len(files):
+        p = os.path.join(core.CV_DIR, files[n - 2])
+        try:
+            with open(p, encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            pass
+    return core.SAMPLE_CV
 
 
 def main():
@@ -193,9 +272,21 @@ def main():
             s = core.initial_state()
             s["changes"] = [f"saved state unreadable — started fresh"]
             _save(s)
+        else:
+            if not FAST:
+                print("\033[2J\033[H", end="")
+                print(f"{B}Career Evidence Agent — prototype v3{R}")
+                _busy([("loading saved state…", 0.02)], 0.6)
     else:
-        s = core.initial_state()
+        print("\033[2J\033[H", end="")
+        cv = _choose_cv()
+        st = core.fresh_state()
+        s = core.reducer(st, {"type": "onboard", "cv": cv})
         _save(s)
+        if not FAST:
+            el = _busy([("reading CV…", 0.05), ("extracting claims…", 0.35),
+                        ("scoring confidence…", 0.85)], 2.4)
+            s["changes"].append(f"profile built in {el:.1f}s — simulated LLM extraction")
     while True:
         print("\033[2J\033[H", end="")
         print(render(s))

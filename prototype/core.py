@@ -51,10 +51,14 @@ KEYWORDS = [
     ("mentor", "Mentoring", 0.55), ("coach", "Mentoring", 0.55),
 ]
 
-SAMPLE_CV = ("Senior software engineer, 8 years. Designed and architected a "
-             "multi-region Kubernetes platform on AWS. Led a team of four "
-             "shipping a payments service. Wrote integration tests with CI/CD. "
-             "Mentored two junior engineers.")
+SAMPLE_CV = ("Senior Software Engineer, 8 years — developer platforms & payments.\n"
+             "2021–now  Acme Payments: architected a multi-region Kubernetes platform "
+             "on AWS (EKS, Terraform, 40k req/s); led a team of four shipping a "
+             "payments service; designed the core ledger schema and its migration path.\n"
+             "2018–2021 DataCorp: built CI/CD pipelines with integration tests and cut "
+             "deploy time by 70%; launched a self-serve reporting product used by 30 teams.\n"
+             "Ongoing   Mentored two junior engineers into senior roles; coached two more "
+             "through their first production launches.")
 
 STATE_FILE = "prototype/state.json"   # "PROTOTYPE — wipe me"
 EXPORT_FILE = "prototype/export.md"
@@ -71,7 +75,7 @@ def _snippet(text, kw):
     if not m:
         return text[:50]
     start = max(0, m.start() - 25)
-    s = text[start:m.end() + 25].strip()
+    s = re.sub(r"\s+", " ", text[start:m.end() + 25]).strip()
     return (s + "…") if len(s) > 50 else s
 
 
