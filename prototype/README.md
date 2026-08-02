@@ -37,8 +37,12 @@ Keys: `[a]` add evidence · `[p]` profile · `[c]` capability map · `[r]` recom
 - Conflict-side selection omitted (decision #2 covers it); retract/erase/correct cover
   the minimum trust controls.
 
-## NOTES — verdict (fill in after the HITL session)
+## NOTES — verdict (from the HITL session, resolved on the ticket)
 
-- Interface decided:
-- Loop beats kept / cut:
-- Trust controls sufficient?:
+- Interface decided: **CLI first**; web shell deferred beyond the MVP (map Out of scope).
+- Loop beats kept: all 5 (onboard → profile → share → capability map → recommendations);
+  what-changed diff feedback kept.
+- Trust controls sufficient: yes — correct / retract / erase; conflict-side selection stays
+  under the evidence-lifecycle contract, not re-prototyped.
+- Repeat interaction: free-form paste/upload. Guided evidence prompts: future effort (out of
+  scope on the map).
