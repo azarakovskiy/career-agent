@@ -74,4 +74,4 @@ recs · `[6]` export profile · `[0]` quit.
   scope on the map).
 - v3 iteration (user feedback: "richer experience, imitate serving delays, more real-life
   feel even with fake data"): simulated latency, onboarding CV chooser, richer demo data.
-  Verdict pending on the ticket.
+  **Accepted** by the user as the initial prototype artifact (ticket closed).
