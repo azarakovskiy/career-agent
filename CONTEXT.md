@@ -86,6 +86,12 @@ The comparison of the current profile against a role profile, including supporte
 
 A derived, prioritized suggestion for a portfolio project, work activity, or learning action. Recommendations are generated from a specific Current-profile revision, Role profile, and evaluation/model version; they are not authoritative source data and become stale when that profile revision changes. Recommendations may continue from a conflicted profile revision but must carry a visible warning.
 
+Recommendations are quality-gated rather than quota-driven: the displayed set may be smaller than five, and every item must be specific, feasible, role-linked, evidence-producing, clearly explained, and safe under its stated evidence basis. A recommendation can be grounded in Known evidence, high-confidence Inferred evidence, or an uncertainty-aware verification/demonstration action. The action itself must meet the quality gate even when its evidence basis is uncertain.
+
+### Recommendation quality gate
+
+The conjunctive contract that decides whether a candidate Recommendation is useful enough to show. A candidate is omitted when any required dimension fails: `not_specific`, `not_feasible`, `not_evidence_producing`, `not_role_linked`, `unsafe_basis`, or `insufficient_context`. The primary view shows only the most useful one or two omission diagnostics, with a plain-language reason and an unblocker; these are diagnostic fields, not additional evidence statuses.
+
 ### Known / Inferred / Unknown
 
 The evidence-status vocabulary:
@@ -94,9 +100,25 @@ The evidence-status vocabulary:
 - **Inferred**: plausible from adjacent evidence but not directly established.
 - **Unknown**: not established by available evidence.
 
-Automatic extraction records a confidence score and provenance for the source and extraction context; the current confidence and evidence context determine whether the claim is presented as Known, Inferred, or Unknown.
+Automatic extraction records a confidence score and provenance for the source and extraction context; the current confidence and evidence context determine whether the claim is presented as Known, Inferred, or Unknown. A confidence score alone never makes a claim Known. Known requires explicit user confirmation or at least one concrete, inspectable source that directly supports the claim. A score of `0.70` or higher is the initial threshold for high-confidence Inferred recommendations, not a replacement for the semantic statuses.
+
+Automatic learning may propose candidate interpretations, but low-confidence interpretations are non-persistent and cannot modify existing profile data. A high-confidence inference cannot silently override a Known claim; it remains a visible conflict until the person explicitly confirms, corrects, retracts, or erases. Uncertainty, conflict, and stale state are orthogonal display markers, not additional core statuses. The agent abstains at the smallest affected level when provenance or evidence is insufficient, preserving unaffected outputs and explaining what would unblock the result.
+
+Every displayed claim and capability assessment has an inspectable provenance trace, including the Evidence item, source excerpt or span when available, interaction turn, relationship, observation/validity time, and extraction/model context. Recommendations identify their capability and evidence gap and explain why the action follows. Explanations are compact for straightforward Known cases and fuller for inferred, conflicting, or mechanism-specific cases; they expose decision-relevant evidence without hidden chain-of-thought.
 
 Changing the extractor or model does not reprocess existing Evidence in the MVP. Existing claims retain their original extraction context; the new context applies only to newly processed Evidence.
+
+### Derivation context
+
+The immutable identifiers recorded on every derived artifact: extractor/model and version, prompt/template and version, evaluation-policy version, and selected Role profile and version. A new context applies only when derivation is explicitly run; historical Evidence, claims, analyses, and recommendations remain reproducible and unchanged.
+
+### Role-profile drift
+
+The deterministic difference between the Role profile version used by an existing analysis and the current selected version. Patch changes cover corrections or metadata; minor changes cover wording, evidence-expectation, or exemplar refinements; major changes add, remove, rename, or materially re-tier capabilities. Existing analyses and recommendations become visibly stale but are not recomputed automatically. The person decides when to recompute, with the exact capability-level diff and drift severity shown.
+
+### Nuance evaluation
+
+A judgment-focused evaluation of capability matching that tests transferable experience, narrow mechanism gaps, explicit evidence citations, direct versus transferable versus missing capability, clear decision explanations, and actionable next steps. The initial evaluation contract is hybrid: deterministic versioned JSON fixtures assert exact structured behavior, while nuance cases use a versioned model, prompt, and rubric. Required rubric dimensions are conjunctive; an aggregate score cannot compensate for a missing safety-critical dimension. LLM judges may pass cases automatically, with results and evidence retained for audit.
 
 ### Local-first persistence
 
