@@ -120,9 +120,13 @@ The deterministic difference between the Role profile version used by an existin
 
 A judgment-focused evaluation of capability matching that tests transferable experience, narrow mechanism gaps, explicit evidence citations, direct versus transferable versus missing capability, clear decision explanations, and actionable next steps. The initial evaluation contract is hybrid: deterministic versioned JSON fixtures assert exact structured behavior, while nuance cases use a versioned model, prompt, and rubric. Required rubric dimensions are conjunctive; an aggregate score cannot compensate for a missing safety-critical dimension. LLM judges may pass cases automatically, with results and evidence retained for audit.
 
+### Workspace
+
+A logical, access-controlled data container for one person’s career data. In the local-first MVP it is implicit in the person’s local workspace directory and database; in a hosted service it is explicit, identified independently of filesystem paths, and may have an owner and members. Evidence, Profile claims, Current-profile revisions, Analyses, and Recommendations belong to a Workspace. Workspace is a data boundary, not a hosted account, tenant, or Role profile.
+
 ### Local-first persistence
 
-The MVP stores the person’s source evidence, profile state, provenance, and generated outputs in the person’s local workspace. The domain model should keep a clear storage boundary so the same durable state can later be persisted in an external database for multi-user or hosted operation.
+The MVP stores the person’s source evidence, profile state, provenance, and generated outputs in the person’s local Workspace. The Workspace has one canonical local store, and the domain model keeps a storage boundary so the same durable state can later be persisted in an external database for multi-user or hosted operation.
 
 ### Market relevance
 
