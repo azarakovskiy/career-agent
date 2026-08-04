@@ -17,19 +17,19 @@ A versioned SQL migration in `src/persistence/migrations/` creates these tables.
 `WorkspaceRepository` exposes:
 
 - `getWorkspace()`
-- `recordSubmission(turn, evidence)` — one atomic operation for the related Interaction turn and Evidence item
+- `recordSubmission(content)` — one atomic operation that creates the related Interaction turn and Evidence item
 - `readSnapshot()`
 - `close()`
 
-`SqliteWorkspaceRepository` is the local adapter. It owns `better-sqlite3`, the migration runner, transaction handling, and persistence-boundary validation. SQL statements are centralized in `workspace-queries.ts`; repository methods coordinate operations and map rows without embedding SQL. The CLI and future session layer depend on `WorkspaceRepository`, not SQLite APIs.
+`SqliteWorkspaceRepository` is the local adapter. It owns `better-sqlite3`, the migration runner, required UUID/hash generation, transaction handling, and persistence-boundary validation. SQLite assigns persisted timestamps in the insert statements. SQL statements are centralized in `workspace-queries.ts`; repository methods coordinate operations and map rows without embedding SQL. The CLI and future session layer depend on `WorkspaceRepository`, not SQLite APIs.
 
 ## Behavior covered
 
 - A database restart preserves the Workspace, Interaction turn, and Evidence item exactly.
 - Repeated content with distinct IDs remains two Evidence items.
-- A duplicate ID or invalid snapshot is rejected without leaving a partial Interaction turn.
+- A failed Evidence insert is rolled back without leaving a partial Interaction turn.
 - Repository tests use a temporary real SQLite database and assert returned behavior rather than SQL shape.
 
 ## Review decision
 
-Pending human review. If accepted, Stage 2 can add the session/domain orchestration over this repository seam without changing the storage contract. The migration-history table remains adapter-internal, so a future migration library can baseline or adapt it without affecting domain data.
+Approved as the persistence foundation. Stage 2 narrows submission construction to `recordSubmission(content)` so callers cannot supply persistence-owned IDs or timestamps. The migration-history table remains adapter-internal, so a future migration library can baseline or adapt it without affecting domain data.

@@ -2,7 +2,6 @@ import { createHash, randomUUID } from "node:crypto";
 import Database from "better-sqlite3";
 import type {
 	EvidenceItem,
-	InteractionTurn,
 	Workspace,
 	WorkspaceSnapshot,
 } from "../domain/evidence.js";
@@ -11,74 +10,14 @@ import { workspaceQueries } from "./workspace-queries.js";
 
 export interface WorkspaceRepository {
 	getWorkspace(): Workspace;
-	recordSubmission(turn: InteractionTurn, evidence: EvidenceItem): void;
+	recordSubmission(content: string): EvidenceItem;
 	readSnapshot(): WorkspaceSnapshot;
 	close(): void;
-}
-
-const uuidPattern =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const sha256Pattern = /^[0-9a-f]{64}$/;
-
-function validateCanonicalUuid(value: string, label: string): void {
-	if (!uuidPattern.test(value)) {
-		throw new Error(`${label} must be a canonical lowercase UUID`);
-	}
 }
 
 function validateNonBlank(value: string, label: string): void {
 	if (value.trim().length === 0) {
 		throw new Error(`${label} must not be blank`);
-	}
-}
-
-function validateRecordedAt(value: string, label: string): void {
-	if (Number.isNaN(Date.parse(value))) {
-		throw new Error(`${label} must be a valid timestamp`);
-	}
-}
-
-function validateSubmission(
-	workspaceId: string,
-	turn: InteractionTurn,
-	evidence: EvidenceItem,
-): void {
-	validateCanonicalUuid(workspaceId, "Workspace ID");
-	validateCanonicalUuid(turn.id, "Interaction turn ID");
-	validateCanonicalUuid(evidence.id, "Evidence item ID");
-	validateCanonicalUuid(turn.workspaceId, "Interaction turn Workspace ID");
-	validateCanonicalUuid(evidence.workspaceId, "Evidence item Workspace ID");
-	validateCanonicalUuid(
-		evidence.interactionTurnId,
-		"Evidence interaction turn ID",
-	);
-	if (
-		turn.workspaceId !== workspaceId ||
-		evidence.workspaceId !== workspaceId
-	) {
-		throw new Error(
-			"Submission records must belong to the current Workspace",
-		);
-	}
-	if (evidence.interactionTurnId !== turn.id) {
-		throw new Error("Evidence must reference its Interaction turn");
-	}
-	validateRecordedAt(turn.recordedAt, "Interaction turn recording time");
-	validateRecordedAt(evidence.recordedAt, "Evidence recording time");
-	validateNonBlank(turn.userContent, "Interaction turn content");
-	validateNonBlank(evidence.contentSnapshot, "Evidence content snapshot");
-	if (!sha256Pattern.test(evidence.contentHash)) {
-		throw new Error(
-			"Evidence content hash must be a lowercase SHA-256 hash",
-		);
-	}
-	const actualHash = createHash("sha256")
-		.update(evidence.contentSnapshot, "utf8")
-		.digest("hex");
-	if (actualHash !== evidence.contentHash) {
-		throw new Error(
-			"Evidence content hash does not match its content snapshot",
-		);
 	}
 }
 
@@ -97,28 +36,38 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
 		return { ...this.workspace };
 	}
 
-	recordSubmission(turn: InteractionTurn, evidence: EvidenceItem): void {
-		validateSubmission(this.workspace.id, turn, evidence);
+	recordSubmission(content: string): EvidenceItem {
+		validateNonBlank(content, "Evidence content");
+		const contentHash = createHash("sha256")
+			.update(content, "utf8")
+			.digest("hex");
+		const interactionTurnId = randomUUID();
+		const evidenceId = randomUUID();
 
-		this.database.transaction(() => {
-			this.database
+		return this.database.transaction(() => {
+			const interactionTurn = this.database
 				.prepare(workspaceQueries.insertInteractionTurn)
-				.run(
-					turn.id,
-					turn.workspaceId,
-					turn.recordedAt,
-					turn.userContent,
-				);
-			this.database
+				.get(interactionTurnId, this.workspace.id, content) as {
+				id: string;
+			};
+			const evidence = this.database
 				.prepare(workspaceQueries.insertEvidenceItem)
-				.run(
-					evidence.id,
-					evidence.workspaceId,
-					evidence.interactionTurnId,
-					evidence.recordedAt,
-					evidence.contentSnapshot,
-					evidence.contentHash,
-				);
+				.get(
+					evidenceId,
+					this.workspace.id,
+					interactionTurn.id,
+					content,
+					contentHash,
+				) as { id: string; recorded_at: string };
+
+			return {
+				id: evidence.id,
+				workspaceId: this.workspace.id,
+				interactionTurnId: interactionTurn.id,
+				recordedAt: evidence.recorded_at,
+				contentSnapshot: content,
+				contentHash,
+			};
 		})();
 	}
 
@@ -173,13 +122,9 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
 			return { id: existing.id, createdAt: existing.created_at };
 		}
 
-		const workspace = {
-			id: randomUUID(),
-			createdAt: new Date().toISOString(),
-		};
-		this.database
+		const created = this.database
 			.prepare(workspaceQueries.insertWorkspace)
-			.run(workspace.id, workspace.createdAt);
-		return workspace;
+			.get(randomUUID()) as { id: string; created_at: string };
+		return { id: created.id, createdAt: created.created_at };
 	}
 }
