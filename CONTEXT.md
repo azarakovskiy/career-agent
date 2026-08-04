@@ -64,11 +64,23 @@ An umbrella description of a kind of role that many concrete job positions fall 
 
 ### Job position
 
-A concrete, specific opening or role at a company, e.g. "Senior Backend Engineer at Acme Payments, 2025 posting". Job positions are not part of the MVP role contract: the MVP compares against the role stereotype, and job-specific tailoring is out of scope.
+A concrete, specific opening or role at a company, e.g. "Senior Backend Engineer at Acme Payments, 2025 posting". A Job position is supplied manually by its URL in the interactive CLI and remains a separate source and assessment target rather than becoming a Role profile automatically.
+
+### Job description
+
+The source text describing a Job position. The system preserves a snapshot of the fetched description and its source URL so that extracted requirements and later assessments remain tied to what was actually observed.
+
+### Job assessment
+
+A derived comparison of a person's Current profile and a Job position, optionally mediated by a selected Role profile. It maps job requirements to role capabilities, identifies direct, transferable, missing, and unmapped requirements, and records the Role profile version used. A Job assessment does not mutate the Role profile.
 
 ### Role profile
 
-A transparent, versioned description of a role stereotype: its capabilities, evidence expectations, and other criteria used for comparison. In the MVP, the person selects one role profile; the system does not discover the role autonomously.
+A transparent, versioned description of a role stereotype: its capabilities, evidence expectations, and other criteria used for comparison. In the MVP, active Role profiles are transparent and user-selected; a manually supplied Job position may produce a separate Role-profile draft, but never silently changes an active profile.
+
+### Role-profile draft
+
+A candidate Role profile derived from one or more Job positions or other market evidence. It is explicitly reviewed and accepted before becoming an active versioned Role profile; rejection leaves the source Job positions and assessments intact.
 
 ### Evidence expectation
 
