@@ -43,6 +43,7 @@ test("repository persists Workspace and Evidence across restart", async () => {
 		assert.equal(interactionTurn?.userContent, evidenceContent);
 		assert.equal(evidence.contentSnapshot, evidenceContent);
 		assert.equal(evidence.contentHash, evidenceHash);
+		assert.equal(evidence.authoredBy, "user");
 		assert.ok(!Number.isNaN(Date.parse(workspace.createdAt)));
 		assert.ok(!Number.isNaN(Date.parse(evidence.recordedAt)));
 		assert.deepEqual(firstSnapshot.evidenceItems, [evidence]);

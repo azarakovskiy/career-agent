@@ -24,6 +24,7 @@ const persistedEvidence: EvidenceItem = {
 	contentSnapshot: "I designed and shipped a durable API.",
 	contentHash:
 		"521f94d623f42690f358e2fb524a97c47b9ace0f9b8139bc767488d59a2c71db",
+	authoredBy: "user",
 };
 
 class RecordingRepository implements WorkspaceRepository {

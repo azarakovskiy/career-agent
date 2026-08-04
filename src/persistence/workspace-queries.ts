@@ -13,8 +13,8 @@ export const workspaceQueries = {
 		 RETURNING id, recorded_at`,
 	insertEvidenceItem: `
 		INSERT INTO evidence_items
-			(id, workspace_id, interaction_turn_id, recorded_at, content_snapshot, content_hash)
-		 VALUES (?, ?, ?, ${databaseCurrentTimestamp}, ?, ?)
+			(id, workspace_id, interaction_turn_id, recorded_at, content_snapshot, content_hash, authored_by)
+		 VALUES (?, ?, ?, ${databaseCurrentTimestamp}, ?, ?, ?)
 		 RETURNING id, recorded_at`,
 	listInteractionTurns: `
 		SELECT id, workspace_id, recorded_at, user_content
@@ -23,7 +23,7 @@ export const workspaceQueries = {
 		 ORDER BY recorded_at, id`,
 	listEvidenceItems: `
 		SELECT id, workspace_id, interaction_turn_id, recorded_at,
-				content_snapshot, content_hash
+				content_snapshot, content_hash, authored_by
 		 FROM evidence_items
 		 WHERE workspace_id = ?
 		 ORDER BY recorded_at, id`,

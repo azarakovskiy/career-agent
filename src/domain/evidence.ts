@@ -10,6 +10,8 @@ export interface InteractionTurn {
 	userContent: string;
 }
 
+export type EvidenceAuthorship = "user" | "agent";
+
 export interface EvidenceItem {
 	id: string;
 	workspaceId: string;
@@ -17,6 +19,7 @@ export interface EvidenceItem {
 	recordedAt: string;
 	contentSnapshot: string;
 	contentHash: string;
+	authoredBy: EvidenceAuthorship;
 }
 
 export interface WorkspaceSnapshot {

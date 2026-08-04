@@ -77,6 +77,7 @@ export class SqliteWorkspaceRepository
 					interactionTurn.id,
 					content,
 					contentHash,
+					"user",
 				) as { id: string; recorded_at: string };
 
 			return {
@@ -86,6 +87,7 @@ export class SqliteWorkspaceRepository
 				recordedAt: evidence.recorded_at,
 				contentSnapshot: content,
 				contentHash,
+				authoredBy: "user" as const,
 			};
 		})();
 	}
@@ -108,6 +110,7 @@ export class SqliteWorkspaceRepository
 			recorded_at: string;
 			content_snapshot: string;
 			content_hash: string;
+			authored_by: "user" | "agent";
 		}>;
 
 		return {
@@ -125,6 +128,7 @@ export class SqliteWorkspaceRepository
 				recordedAt: row.recorded_at,
 				contentSnapshot: row.content_snapshot,
 				contentHash: row.content_hash,
+				authoredBy: row.authored_by,
 			})),
 		};
 	}
@@ -150,7 +154,10 @@ export class SqliteWorkspaceRepository
 			};
 
 			for (const candidate of extraction.claims) {
-				const claimId = profileClaimId(candidate.normalizedProposition);
+				const claimId = profileClaimId(
+					this.workspace.id,
+					candidate.normalizedProposition,
+				);
 				this.database
 					.prepare(workspaceQueries.insertProfileClaim)
 					.run(

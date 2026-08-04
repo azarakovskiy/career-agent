@@ -52,9 +52,12 @@ export interface ProfileExtraction {
 
 export type ProfileExtractor = (evidence: EvidenceItem) => ProfileExtraction;
 
-export function profileClaimId(normalizedProposition: string): string {
+export function profileClaimId(
+	workspaceId: string,
+	normalizedProposition: string,
+): string {
 	return createHash("sha256")
-		.update(normalizedProposition, "utf8")
+		.update(`${workspaceId}\u0000${normalizedProposition}`, "utf8")
 		.digest("hex");
 }
 

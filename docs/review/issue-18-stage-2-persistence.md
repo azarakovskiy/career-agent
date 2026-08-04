@@ -15,11 +15,11 @@
 
 Migration `002-profile-claims.sql` adds:
 
-- stable `profile_claims` keyed by SHA-256 of the normalized proposition;
+- stable workspace-scoped `profile_claims` keyed by SHA-256 of the Workspace ID and normalized proposition;
 - `profile_claim_evidence` links containing Evidence, Interaction-turn derivation through the Evidence row, source line span, evidence basis, confidence, and extractor context;
 - revision and revision-claim tables for the Current profile.
 
-Repeated normalized propositions reuse one claim identity while retaining distinct Evidence provenance. Database timestamps remain database-generated.
+Repeated normalized propositions reuse one claim identity within a Workspace while retaining distinct Evidence provenance. Evidence now carries explicit `authoredBy` metadata; this slice writes only `user`, so agent-generated text has no path into source Evidence. Database timestamps remain database-generated.
 
 ## Checks
 

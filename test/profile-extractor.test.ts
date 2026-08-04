@@ -63,6 +63,7 @@ test("deterministic extractor receives original Evidence", () => {
 		recordedAt: "2026-01-01T00:00:00.000Z",
 		contentSnapshot: "Built a payments service.",
 		contentHash: "hash",
+		authoredBy: "user",
 	};
 
 	const extraction = deterministicProfileExtractor(evidence);

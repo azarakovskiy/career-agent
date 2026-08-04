@@ -58,7 +58,10 @@ test("repository persists Current profile claims and provenance across restart",
 		const firstClaimId = firstProfile.claims[0]?.claim.id;
 		assert.equal(
 			firstClaimId,
-			profileClaimId("designed and shipped durable apis"),
+			profileClaimId(
+				evidence.workspaceId,
+				"designed and shipped durable apis",
+			),
 		);
 		repository.close();
 
@@ -94,7 +97,7 @@ test("same normalized proposition retains one claim across Evidence items", asyn
 		assert.equal(secondProfile.claims.length, 1);
 		assert.equal(
 			secondProfile.claims[0]?.claim.id,
-			profileClaimId("designed durable apis"),
+			profileClaimId(firstEvidence.workspaceId, "designed durable apis"),
 		);
 		assert.deepEqual(
 			secondProfile.claims[0]?.provenance.map((item) => item.evidenceId),
