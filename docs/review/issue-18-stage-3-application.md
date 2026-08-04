@@ -15,10 +15,11 @@ Each claim shows:
 - normalized proposition and source proposition;
 - derived Known/Inferred/Unknown status and confidence;
 - supporting Evidence and Interaction-turn IDs;
+- relationship, recorded time, nullable source-observed and validity times;
 - source line span, evidence basis, extractor context;
 - Current-profile revision, cause Evidence, and creation time.
 
-The view exposes provenance and uncertainty without exposing hidden model reasoning.
+The view exposes authorship, provenance, observation/validity uncertainty, and claim uncertainty without exposing hidden model reasoning. Agent-authored Evidence is rejected by the profile derivation session.
 
 ## Checks
 

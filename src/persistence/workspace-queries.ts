@@ -34,8 +34,9 @@ export const workspaceQueries = {
 	insertProfileClaimEvidence: `
 		INSERT OR IGNORE INTO profile_claim_evidence
 			(claim_id, evidence_id, source_line_start, source_line_end,
-			 evidence_basis, confidence, extractor_context)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			 evidence_basis, confidence, extractor_context, relationship,
+			 source_observed_at, valid_from, valid_to)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	insertCurrentProfileRevision: `
 		INSERT INTO current_profile_revisions
 			(id, workspace_id, cause_evidence_id, extractor_context, created_at)
@@ -64,7 +65,11 @@ export const workspaceQueries = {
 			pe.source_line_end,
 			pe.evidence_basis,
 			pe.confidence,
-			pe.extractor_context
+			pe.extractor_context,
+			pe.relationship,
+			pe.source_observed_at,
+			pe.valid_from,
+			pe.valid_to
 		 FROM current_profile_revision_claims rc
 		 JOIN profile_claims c ON c.id = rc.claim_id
 		 JOIN profile_claim_evidence pe ON pe.claim_id = c.id

@@ -40,6 +40,7 @@ function renderEvidence(evidence: EvidenceItem): string[] {
 		`  Interaction turn: ${evidence.interactionTurnId}`,
 		`  Recorded at: ${evidence.recordedAt}`,
 		`  SHA-256: ${evidence.contentHash}`,
+		`  Authored by: ${evidence.authoredBy}`,
 		"  Content:",
 		evidence.contentSnapshot,
 	];
@@ -73,6 +74,12 @@ function renderSnapshot(snapshot: WorkspaceSnapshot): string {
 	return `${lines.join("\n")}\n`;
 }
 
+function deriveProfileClaimConfidence(
+	provenance: CurrentProfileSnapshot["claims"][number]["provenance"],
+): number {
+	return Math.max(...provenance.map((item) => item.confidence));
+}
+
 function renderCurrentProfile(profile: CurrentProfileSnapshot): string {
 	const lines = [
 		`Current profile revision: ${profile.revision?.id ?? "none"}`,
@@ -91,8 +98,8 @@ function renderCurrentProfile(profile: CurrentProfileSnapshot): string {
 		const status = deriveProfileClaimStatus(
 			currentClaim.provenance.map((item) => item.evidenceBasis),
 		);
-		const confidence = Math.max(
-			...currentClaim.provenance.map((item) => item.confidence),
+		const confidence = deriveProfileClaimConfidence(
+			currentClaim.provenance,
 		);
 		lines.push(
 			`Claim: ${currentClaim.claim.proposition}`,
@@ -105,6 +112,11 @@ function renderCurrentProfile(profile: CurrentProfileSnapshot): string {
 			lines.push(
 				`    Evidence: ${provenance.evidenceId}`,
 				`    Interaction turn: ${provenance.interactionTurnId}`,
+				`    Recorded at: ${provenance.recordedAt}`,
+				`    Source observed at: ${provenance.sourceObservedAt ?? "unknown"}`,
+				`    Valid from: ${provenance.validFrom ?? "unknown"}`,
+				`    Valid to: ${provenance.validTo ?? "unknown"}`,
+				`    Relationship: ${provenance.relationship}`,
 				`    Source lines: ${provenance.sourceSpan.startLine}-${provenance.sourceSpan.endLine}`,
 				`    Basis: ${provenance.evidenceBasis}`,
 				`    Confidence: ${provenance.confidence.toFixed(2)}`,

@@ -5,6 +5,7 @@ export const DETERMINISTIC_EXTRACTOR_CONTEXT = "deterministic-line-v1";
 
 export type ProfileClaimStatus = "Known" | "Inferred" | "Unknown";
 export type ProfileEvidenceBasis = "direct" | "adjacent" | "insufficient";
+export type ProfileClaimRelationship = "supports" | "contradicts" | "corrects";
 
 export interface ProfileClaimSourceSpan {
 	startLine: number;
@@ -112,6 +113,11 @@ export interface ProfileClaim {
 export interface ProfileClaimProvenance {
 	evidenceId: string;
 	interactionTurnId: string;
+	recordedAt: string;
+	sourceObservedAt: string | null;
+	validFrom: string | null;
+	validTo: string | null;
+	relationship: ProfileClaimRelationship;
 	sourceSpan: ProfileClaimSourceSpan;
 	evidenceBasis: ProfileEvidenceBasis;
 	confidence: number;

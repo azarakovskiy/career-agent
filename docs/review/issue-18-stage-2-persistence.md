@@ -16,7 +16,7 @@
 Migration `002-profile-claims.sql` adds:
 
 - stable workspace-scoped `profile_claims` keyed by SHA-256 of the Workspace ID and normalized proposition;
-- `profile_claim_evidence` links containing Evidence, Interaction-turn derivation through the Evidence row, source line span, evidence basis, confidence, and extractor context;
+- `profile_claim_evidence` links containing Evidence, Interaction-turn derivation through the Evidence row, source line span, relationship, evidence basis, confidence, extractor context, and nullable source-observed/validity times;
 - revision and revision-claim tables for the Current profile.
 
 Repeated normalized propositions reuse one claim identity within a Workspace while retaining distinct Evidence provenance. Evidence now carries explicit `authoredBy` metadata; this slice writes only `user`, so agent-generated text has no path into source Evidence. Database timestamps remain database-generated.
@@ -27,4 +27,4 @@ Temporary real SQLite tests cover restart persistence, claim identity reuse acro
 
 ## Deliberate omissions
 
-Status remains derived from stored evidence basis rather than stored as a mutable field. Semantic/LLM extraction, retraction, conflict resolution, claim recomputation, and downstream Analysis/Capability/Recommendation behavior remain out of scope.
+Status remains derived from stored evidence basis rather than stored as a mutable field. The first slice recomputes displayed confidence as the strongest confidence across the current provenance set; later conflict/recomputation slices can replace that policy. Semantic/LLM extraction, retraction, conflict resolution, claim recomputation, and downstream Analysis/Capability/Recommendation behavior remain out of scope.

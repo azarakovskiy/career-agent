@@ -42,6 +42,18 @@ class RecordingProfileRepository implements ProfileRepository {
 	}
 }
 
+test("profile session rejects agent-authored Evidence", () => {
+	const repository = new RecordingProfileRepository();
+	const session = new LocalProfileDerivationSession(repository, () => {
+		throw new Error("extractor should not run");
+	});
+
+	assert.throws(
+		() => session.deriveProfile({ ...evidence, authoredBy: "agent" }),
+		/Only user-authored Evidence can produce Profile claims/,
+	);
+});
+
 test("profile session passes original Evidence through the extractor and repository", () => {
 	const repository = new RecordingProfileRepository();
 	let extractedEvidence: EvidenceItem | undefined;

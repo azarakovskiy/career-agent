@@ -16,6 +16,12 @@ export class LocalProfileDerivationSession implements ProfileDerivationSession {
 	) {}
 
 	deriveProfile(evidence: EvidenceItem): CurrentProfileSnapshot {
+		if (evidence.authoredBy !== "user") {
+			throw new Error(
+				"Only user-authored Evidence can produce Profile claims",
+			);
+		}
+
 		return this.repository.recordProfileDerivation(
 			evidence.id,
 			this.extractor(evidence),

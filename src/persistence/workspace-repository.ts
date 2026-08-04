@@ -176,6 +176,10 @@ export class SqliteWorkspaceRepository
 						candidate.evidenceBasis,
 						candidate.confidence,
 						extraction.extractorContext,
+						"supports",
+						null,
+						null,
+						null,
 					);
 			}
 
@@ -225,12 +229,17 @@ export class SqliteWorkspaceRepository
 			proposition: string;
 			claim_created_at: string;
 			evidence_id: string;
+			evidence_recorded_at: string;
 			interaction_turn_id: string;
 			source_line_start: number;
 			source_line_end: number;
 			evidence_basis: "direct" | "adjacent" | "insufficient";
 			confidence: number;
 			extractor_context: string;
+			relationship: "supports" | "contradicts" | "corrects";
+			source_observed_at: string | null;
+			valid_from: string | null;
+			valid_to: string | null;
 		}>;
 		const claims = new Map<string, CurrentProfileClaim>();
 
@@ -240,6 +249,11 @@ export class SqliteWorkspaceRepository
 				existing.provenance.push({
 					evidenceId: row.evidence_id,
 					interactionTurnId: row.interaction_turn_id,
+					recordedAt: row.evidence_recorded_at,
+					sourceObservedAt: row.source_observed_at,
+					validFrom: row.valid_from,
+					validTo: row.valid_to,
+					relationship: row.relationship,
 					sourceSpan: {
 						startLine: row.source_line_start,
 						endLine: row.source_line_end,
@@ -261,6 +275,11 @@ export class SqliteWorkspaceRepository
 			const provenance: ProfileClaimProvenance = {
 				evidenceId: row.evidence_id,
 				interactionTurnId: row.interaction_turn_id,
+				recordedAt: row.evidence_recorded_at,
+				sourceObservedAt: row.source_observed_at,
+				validFrom: row.valid_from,
+				validTo: row.valid_to,
+				relationship: row.relationship,
 				sourceSpan: {
 					startLine: row.source_line_start,
 					endLine: row.source_line_end,

@@ -107,6 +107,9 @@ test("CLI persists pasted Evidence across process restart", async () => {
 			firstRun.stdout,
 			/Extractor context: deterministic-line-v1/,
 		);
+		assert.match(firstRun.stdout, /Authored by: user/);
+		assert.match(firstRun.stdout, /Relationship: supports/);
+		assert.match(firstRun.stdout, /Source observed at: unknown/);
 		assert.match(firstRun.stdout, /User content:/);
 		assert.match(firstRun.stdout, new RegExp(contentHash));
 		assert.ok(firstRun.stdout.includes(content));
@@ -142,6 +145,9 @@ test("CLI persists pasted Evidence across process restart", async () => {
 			reopenedRun.stdout,
 			/Extractor context: deterministic-line-v1/,
 		);
+		assert.match(reopenedRun.stdout, /Authored by: user/);
+		assert.match(reopenedRun.stdout, /Relationship: supports/);
+		assert.match(reopenedRun.stdout, /Source observed at: unknown/);
 		assert.match(reopenedRun.stdout, new RegExp(contentHash));
 		assert.ok(reopenedRun.stdout.includes(content));
 	} finally {
