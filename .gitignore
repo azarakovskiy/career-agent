@@ -8,3 +8,6 @@ __pycache__/
 # Node/TypeScript build artifacts
 node_modules/
 dist/
+
+# dev
+*.sqlite
