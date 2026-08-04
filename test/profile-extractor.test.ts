@@ -19,7 +19,6 @@ test("extracts bounded claims from nonblank evidence lines", () => {
 			normalizedProposition: "designed and shipped durable apis",
 			evidenceBasis: "direct",
 			confidence: 0.95,
-			extractorContext: DETERMINISTIC_EXTRACTOR_CONTEXT,
 			sourceSpan: { startLine: 1, endLine: 1 },
 		},
 		{
@@ -27,7 +26,6 @@ test("extracts bounded claims from nonblank evidence lines", () => {
 			normalizedProposition: "familiar with kubernetes",
 			evidenceBasis: "adjacent",
 			confidence: 0.7,
-			extractorContext: DETERMINISTIC_EXTRACTOR_CONTEXT,
 			sourceSpan: { startLine: 3, endLine: 3 },
 		},
 		{
@@ -35,7 +33,6 @@ test("extracts bounded claims from nonblank evidence lines", () => {
 			normalizedProposition: "interested in observability",
 			evidenceBasis: "insufficient",
 			confidence: 0,
-			extractorContext: DETERMINISTIC_EXTRACTOR_CONTEXT,
 			sourceSpan: { startLine: 4, endLine: 4 },
 		},
 	]);
@@ -68,10 +65,9 @@ test("deterministic extractor receives original Evidence", () => {
 		contentHash: "hash",
 	};
 
-	assert.equal(
-		deterministicProfileExtractor(evidence)[0]?.proposition,
-		evidence.contentSnapshot,
-	);
+	const extraction = deterministicProfileExtractor(evidence);
+	assert.equal(extraction.extractorContext, DETERMINISTIC_EXTRACTOR_CONTEXT);
+	assert.equal(extraction.claims[0]?.proposition, evidence.contentSnapshot);
 });
 
 test("extractor does not invent prose", () => {

@@ -5,6 +5,15 @@ import type {
 	Workspace,
 	WorkspaceSnapshot,
 } from "../domain/evidence.js";
+import type {
+	CurrentProfileClaim,
+	CurrentProfileRevision,
+	CurrentProfileSnapshot,
+	ProfileClaim,
+	ProfileClaimProvenance,
+	ProfileExtraction,
+} from "../domain/profile.js";
+import { profileClaimId } from "../domain/profile.js";
 import { applyMigrations } from "./migration-runner.js";
 import { workspaceQueries } from "./workspace-queries.js";
 
@@ -15,13 +24,23 @@ export interface WorkspaceRepository {
 	close(): void;
 }
 
+export interface ProfileRepository {
+	recordProfileDerivation(
+		evidenceId: string,
+		extraction: ProfileExtraction,
+	): CurrentProfileSnapshot;
+	readCurrentProfile(): CurrentProfileSnapshot;
+}
+
 function validateNonBlank(value: string, label: string): void {
 	if (value.trim().length === 0) {
 		throw new Error(`${label} must not be blank`);
 	}
 }
 
-export class SqliteWorkspaceRepository implements WorkspaceRepository {
+export class SqliteWorkspaceRepository
+	implements WorkspaceRepository, ProfileRepository
+{
 	private readonly database: Database;
 	private readonly workspace: Workspace;
 
@@ -107,6 +126,156 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
 				contentSnapshot: row.content_snapshot,
 				contentHash: row.content_hash,
 			})),
+		};
+	}
+
+	recordProfileDerivation(
+		evidenceId: string,
+		extraction: ProfileExtraction,
+	): CurrentProfileSnapshot {
+		return this.database.transaction(() => {
+			const revision = this.database
+				.prepare(workspaceQueries.insertCurrentProfileRevision)
+				.get(
+					randomUUID(),
+					this.workspace.id,
+					evidenceId,
+					extraction.extractorContext,
+				) as {
+				id: string;
+				workspace_id: string;
+				cause_evidence_id: string;
+				extractor_context: string;
+				created_at: string;
+			};
+
+			for (const candidate of extraction.claims) {
+				const claimId = profileClaimId(candidate.normalizedProposition);
+				this.database
+					.prepare(workspaceQueries.insertProfileClaim)
+					.run(
+						claimId,
+						this.workspace.id,
+						candidate.normalizedProposition,
+						candidate.proposition,
+					);
+				this.database
+					.prepare(workspaceQueries.insertProfileClaimEvidence)
+					.run(
+						claimId,
+						evidenceId,
+						candidate.sourceSpan.startLine,
+						candidate.sourceSpan.endLine,
+						candidate.evidenceBasis,
+						candidate.confidence,
+						extraction.extractorContext,
+					);
+			}
+
+			const claimIds = this.database
+				.prepare(
+					"SELECT id FROM profile_claims WHERE workspace_id = ? ORDER BY normalized_proposition",
+				)
+				.all(this.workspace.id) as Array<{ id: string }>;
+			const insertRevisionClaim = this.database.prepare(
+				workspaceQueries.insertCurrentProfileRevisionClaim,
+			);
+			for (const claim of claimIds) {
+				insertRevisionClaim.run(revision.id, claim.id);
+			}
+
+			return this.readCurrentProfile();
+		})();
+	}
+
+	readCurrentProfile(): CurrentProfileSnapshot {
+		const revisionRow = this.database
+			.prepare(workspaceQueries.findLatestCurrentProfileRevision)
+			.get(this.workspace.id) as
+			| {
+					id: string;
+					workspace_id: string;
+					cause_evidence_id: string;
+					extractor_context: string;
+					created_at: string;
+			  }
+			| undefined;
+
+		if (!revisionRow) {
+			return {
+				workspaceId: this.workspace.id,
+				revision: null,
+				claims: [],
+			};
+		}
+
+		const claimRows = this.database
+			.prepare(workspaceQueries.listCurrentProfileClaims)
+			.all(revisionRow.id) as Array<{
+			claim_id: string;
+			claim_workspace_id: string;
+			normalized_proposition: string;
+			proposition: string;
+			claim_created_at: string;
+			evidence_id: string;
+			interaction_turn_id: string;
+			source_line_start: number;
+			source_line_end: number;
+			evidence_basis: "direct" | "adjacent" | "insufficient";
+			confidence: number;
+			extractor_context: string;
+		}>;
+		const claims = new Map<string, CurrentProfileClaim>();
+
+		for (const row of claimRows) {
+			const existing = claims.get(row.claim_id);
+			if (existing) {
+				existing.provenance.push({
+					evidenceId: row.evidence_id,
+					interactionTurnId: row.interaction_turn_id,
+					sourceSpan: {
+						startLine: row.source_line_start,
+						endLine: row.source_line_end,
+					},
+					evidenceBasis: row.evidence_basis,
+					confidence: row.confidence,
+					extractorContext: row.extractor_context,
+				});
+				continue;
+			}
+
+			const claim: ProfileClaim = {
+				id: row.claim_id,
+				workspaceId: row.claim_workspace_id,
+				normalizedProposition: row.normalized_proposition,
+				proposition: row.proposition,
+				createdAt: row.claim_created_at,
+			};
+			const provenance: ProfileClaimProvenance = {
+				evidenceId: row.evidence_id,
+				interactionTurnId: row.interaction_turn_id,
+				sourceSpan: {
+					startLine: row.source_line_start,
+					endLine: row.source_line_end,
+				},
+				evidenceBasis: row.evidence_basis,
+				confidence: row.confidence,
+				extractorContext: row.extractor_context,
+			};
+			claims.set(row.claim_id, { claim, provenance: [provenance] });
+		}
+
+		const revision: CurrentProfileRevision = {
+			id: revisionRow.id,
+			workspaceId: revisionRow.workspace_id,
+			createdAt: revisionRow.created_at,
+			causeEvidenceId: revisionRow.cause_evidence_id,
+			extractorContext: revisionRow.extractor_context,
+		};
+		return {
+			workspaceId: this.workspace.id,
+			revision,
+			claims: [...claims.values()],
 		};
 	}
 

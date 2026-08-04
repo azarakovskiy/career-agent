@@ -16,7 +16,6 @@ export interface ProfileClaimCandidate {
 	normalizedProposition: string;
 	evidenceBasis: ProfileEvidenceBasis;
 	confidence: number;
-	extractorContext: string;
 	sourceSpan: ProfileClaimSourceSpan;
 }
 
@@ -46,9 +45,12 @@ function classifyClaim(proposition: string): {
 	return { evidenceBasis: "insufficient", confidence: 0 };
 }
 
-export type ProfileExtractor = (
-	evidence: EvidenceItem,
-) => ProfileClaimCandidate[];
+export interface ProfileExtraction {
+	extractorContext: string;
+	claims: ProfileClaimCandidate[];
+}
+
+export type ProfileExtractor = (evidence: EvidenceItem) => ProfileExtraction;
 
 export function profileClaimId(normalizedProposition: string): string {
 	return createHash("sha256")
@@ -85,12 +87,49 @@ export function extractProfileClaims(content: string): ProfileClaimCandidate[] {
 				proposition,
 				normalizedProposition,
 				...classification,
-				extractorContext: DETERMINISTIC_EXTRACTOR_CONTEXT,
 				sourceSpan: { startLine: index + 1, endLine: index + 1 },
 			},
 		];
 	});
 }
 
-export const deterministicProfileExtractor: ProfileExtractor = (evidence) =>
-	extractProfileClaims(evidence.contentSnapshot);
+export const deterministicProfileExtractor: ProfileExtractor = (evidence) => ({
+	extractorContext: DETERMINISTIC_EXTRACTOR_CONTEXT,
+	claims: extractProfileClaims(evidence.contentSnapshot),
+});
+
+export interface ProfileClaim {
+	id: string;
+	workspaceId: string;
+	normalizedProposition: string;
+	proposition: string;
+	createdAt: string;
+}
+
+export interface ProfileClaimProvenance {
+	evidenceId: string;
+	interactionTurnId: string;
+	sourceSpan: ProfileClaimSourceSpan;
+	evidenceBasis: ProfileEvidenceBasis;
+	confidence: number;
+	extractorContext: string;
+}
+
+export interface CurrentProfileClaim {
+	claim: ProfileClaim;
+	provenance: ProfileClaimProvenance[];
+}
+
+export interface CurrentProfileRevision {
+	id: string;
+	workspaceId: string;
+	createdAt: string;
+	causeEvidenceId: string;
+	extractorContext: string;
+}
+
+export interface CurrentProfileSnapshot {
+	workspaceId: string;
+	revision: CurrentProfileRevision | null;
+	claims: CurrentProfileClaim[];
+}
