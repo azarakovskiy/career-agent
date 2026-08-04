@@ -21,7 +21,7 @@ A versioned SQL migration in `src/persistence/migrations/` creates these tables.
 - `readSnapshot()`
 - `close()`
 
-`SqliteWorkspaceRepository` is the local adapter. It owns `better-sqlite3`, the migration runner, required UUID/hash generation, transaction handling, and persistence-boundary validation. SQLite assigns persisted timestamps in the insert statements. SQL statements are centralized in `workspace-queries.ts`; repository methods coordinate operations and map rows without embedding SQL. The CLI and future session layer depend on `WorkspaceRepository`, not SQLite APIs.
+`SqliteWorkspaceRepository` is the public local adapter in its own file. It owns `better-sqlite3`, the migration runner, and composition of the separate SQLite workspace/profile persistence components. Those components own required UUID/hash generation, transaction handling, persistence-boundary validation, and row mapping. SQLite assigns persisted timestamps in the insert statements. Workspace SQL lives in `workspace-queries.ts` and profile SQL lives in `profile-queries.ts`; the CLI and future session layer depend on repository interfaces, not SQLite APIs.
 
 ## Behavior covered
 

@@ -4,12 +4,12 @@
 
 ## Persistence seam
 
-`ProfileRepository` adds two operations behind the existing SQLite adapter:
+`ProfileRepository` adds two operations behind the SQLite adapter:
 
 - `recordProfileDerivation(evidenceId, extraction)` atomically upserts stable claims, records Evidence provenance, creates a Current-profile revision, and snapshots all current claims into that revision.
 - `readCurrentProfile()` reopens the latest revision with every claim and provenance link.
 
-`SqliteWorkspaceRepository` implements both `WorkspaceRepository` and `ProfileRepository`; the domain/session/application layers do not use SQLite APIs.
+`SqliteWorkspaceRepository` is the public adapter in its own file. It composes separate SQLite workspace and profile persistence components; the domain/session/application layers do not use SQLite APIs.
 
 ## Stored data
 

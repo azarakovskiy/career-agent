@@ -6,7 +6,7 @@ import type {
 	ProfileExtraction,
 } from "../src/domain/profile.js";
 import { LocalProfileDerivationSession } from "../src/session/profile-derivation-session.js";
-import type { ProfileRepository } from "../src/persistence/workspace-repository.js";
+import type { ProfileRepository } from "../src/persistence/profile-repository.js";
 
 const evidence: EvidenceItem = {
 	id: "evidence-id",

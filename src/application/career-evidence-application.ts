@@ -5,11 +5,9 @@ import {
 	deterministicProfileExtractor,
 	type CurrentProfileSnapshot,
 } from "../domain/profile.js";
-import {
-	SqliteWorkspaceRepository,
-	type ProfileRepository,
-	type WorkspaceRepository,
-} from "../persistence/workspace-repository.js";
+import type { ProfileRepository } from "../persistence/profile-repository.js";
+import { SqliteWorkspaceRepository } from "../persistence/sqlite-workspace-repository.js";
+import type { WorkspaceRepository } from "../persistence/workspace-repository.js";
 import {
 	LocalEvidenceSubmissionSession,
 	type EvidenceSubmissionSession,

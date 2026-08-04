@@ -7,7 +7,7 @@ import {
 	deterministicProfileExtractor,
 	profileClaimId,
 } from "../src/domain/profile.js";
-import { SqliteWorkspaceRepository } from "../src/persistence/workspace-repository.js";
+import { SqliteWorkspaceRepository } from "../src/persistence/sqlite-workspace-repository.js";
 
 function assertCanonicalUuid(value: string): void {
 	assert.match(

@@ -3,7 +3,7 @@ import type {
 	CurrentProfileSnapshot,
 	ProfileExtractor,
 } from "../domain/profile.js";
-import type { ProfileRepository } from "../persistence/workspace-repository.js";
+import type { ProfileRepository } from "../persistence/profile-repository.js";
 
 export interface ProfileDerivationSession {
 	deriveProfile(evidence: EvidenceItem): CurrentProfileSnapshot;

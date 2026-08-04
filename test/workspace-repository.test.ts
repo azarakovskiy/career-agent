@@ -4,10 +4,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import {
-	SqliteWorkspaceRepository,
-	type WorkspaceRepository,
-} from "../src/persistence/workspace-repository.js";
+import { SqliteWorkspaceRepository } from "../src/persistence/sqlite-workspace-repository.js";
+import type { WorkspaceRepository } from "../src/persistence/workspace-repository.js";
 
 const evidenceContent = "I designed and shipped a durable API.";
 const evidenceHash =
