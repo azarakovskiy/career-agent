@@ -1,5 +1,4 @@
 import { strict as assert } from "node:assert";
-import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -54,6 +53,7 @@ test("CLI starts and exits cleanly on quit", async () => {
 		assert.equal(result.stderr, "");
 		assert.match(result.stdout, /Career Evidence Agent/);
 		assert.match(result.stdout, /Evidence items: 0/);
+		assert.match(result.stdout, /Current profile: 0 claims/);
 	} finally {
 		await rm(directory, { recursive: true, force: true });
 	}
@@ -64,92 +64,46 @@ test("CLI persists pasted Evidence across process restart", async () => {
 	const databasePath = join(directory, "workspace.sqlite");
 	const content =
 		"Designed and shipped a durable API.\nImproved its reliability.";
-	const contentHash = createHash("sha256")
-		.update(content, "utf8")
-		.digest("hex");
-
 	try {
 		const firstRun = await runCliProcess(
 			`paste\n${content}\n.\nlist\nquit\n`,
 			databasePath,
 		);
-		const workspaceId = firstRun.stdout.match(
-			/^Workspace: ([0-9a-f-]{36})$/m,
-		)?.[1];
-		const evidenceId = firstRun.stdout.match(
-			/^Evidence: ([0-9a-f-]{36})$/m,
-		)?.[1];
-		const interactionTurnId = firstRun.stdout.match(
-			/^Interaction turn: ([0-9a-f-]{36})$/m,
-		)?.[1];
-
 		assert.equal(firstRun.code, 0);
 		assert.equal(firstRun.stderr, "");
-		assert.ok(workspaceId);
-		assert.ok(evidenceId);
-		assert.ok(interactionTurnId);
-		assert.match(firstRun.stdout, /Saved Evidence item:/);
-		assert.match(firstRun.stdout, /Interaction turns: 1/);
+		assert.match(firstRun.stdout, /Evidence saved\./);
 		assert.match(firstRun.stdout, /Evidence items: 1/);
+		assert.match(firstRun.stdout, /Current profile: 2 claims/);
 		assert.match(
 			firstRun.stdout,
-			/Current profile revision: [0-9a-f-]{36}/,
+			/\[Known\] Designed and shipped a durable API\./,
 		);
-		assert.match(firstRun.stdout, /Profile claims: 2/);
-		assert.match(firstRun.stdout, /Status: Known/);
-		assert.match(firstRun.stdout, /Status: Unknown/);
-		assert.match(
-			firstRun.stdout,
-			/Normalized: designed and shipped a durable api/,
-		);
-		assert.match(firstRun.stdout, /Provenance:/);
-		assert.match(
-			firstRun.stdout,
-			/Extractor context: deterministic-line-v1/,
-		);
-		assert.match(firstRun.stdout, /Authored by: user/);
-		assert.match(firstRun.stdout, /Relationship: supports/);
-		assert.match(firstRun.stdout, /Source observed at: unknown/);
-		assert.match(firstRun.stdout, /User content:/);
-		assert.match(firstRun.stdout, new RegExp(contentHash));
+		assert.match(firstRun.stdout, /\[Unknown\] Improved its reliability\./);
 		assert.ok(firstRun.stdout.includes(content));
+		assert.doesNotMatch(
+			firstRun.stdout,
+			/SHA-256|Extractor context|Interaction turn:/,
+		);
 
 		const reopenedRun = await runCliProcess("quit\n", databasePath);
 
 		assert.equal(reopenedRun.code, 0);
 		assert.equal(reopenedRun.stderr, "");
-		assert.match(
-			reopenedRun.stdout,
-			new RegExp(`Workspace: ${workspaceId}`),
-		);
-		assert.match(
-			reopenedRun.stdout,
-			new RegExp(`Interaction turn: ${interactionTurnId}`),
-		);
-		assert.match(reopenedRun.stdout, new RegExp(`Evidence: ${evidenceId}`));
-		assert.match(reopenedRun.stdout, /Interaction turns: 1/);
 		assert.match(reopenedRun.stdout, /Evidence items: 1/);
+		assert.match(reopenedRun.stdout, /Current profile: 2 claims/);
 		assert.match(
 			reopenedRun.stdout,
-			/Current profile revision: [0-9a-f-]{36}/,
+			/\[Known\] Designed and shipped a durable API\./,
 		);
-		assert.match(reopenedRun.stdout, /Profile claims: 2/);
-		assert.match(reopenedRun.stdout, /Status: Known/);
-		assert.match(reopenedRun.stdout, /Status: Unknown/);
 		assert.match(
 			reopenedRun.stdout,
-			/Normalized: designed and shipped a durable api/,
+			/\[Unknown\] Improved its reliability\./,
 		);
-		assert.match(reopenedRun.stdout, /Provenance:/);
-		assert.match(
-			reopenedRun.stdout,
-			/Extractor context: deterministic-line-v1/,
-		);
-		assert.match(reopenedRun.stdout, /Authored by: user/);
-		assert.match(reopenedRun.stdout, /Relationship: supports/);
-		assert.match(reopenedRun.stdout, /Source observed at: unknown/);
-		assert.match(reopenedRun.stdout, new RegExp(contentHash));
 		assert.ok(reopenedRun.stdout.includes(content));
+		assert.doesNotMatch(
+			reopenedRun.stdout,
+			/SHA-256|Extractor context|Interaction turn:/,
+		);
 	} finally {
 		await rm(directory, { recursive: true, force: true });
 	}
@@ -168,6 +122,7 @@ test("CLI rejects blank pasted Evidence without persisting it", async () => {
 		assert.equal(result.stderr, "");
 		assert.match(result.stdout, /Evidence content must not be blank/);
 		assert.match(result.stdout, /Evidence items: 0/);
+		assert.match(result.stdout, /Current profile: 0 claims/);
 	} finally {
 		await rm(directory, { recursive: true, force: true });
 	}

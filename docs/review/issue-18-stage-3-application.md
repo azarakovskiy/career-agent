@@ -10,22 +10,19 @@ After each pasted Evidence submission, the application derives and renders the l
 
 ## Displayed profile data
 
-Each claim shows:
+The normal CLI view is intentionally concise. It shows:
 
-- normalized proposition and source proposition;
-- derived Known/Inferred/Unknown status and confidence;
-- supporting Evidence and Interaction-turn IDs;
-- relationship, recorded time, nullable source-observed and validity times;
-- source line span, evidence basis, extractor context;
-- Current-profile revision, cause Evidence, and creation time.
+- the pasted Evidence content;
+- the number of Evidence items;
+- each current claim with its derived Known/Inferred/Unknown status.
 
-The view exposes authorship, provenance, observation/validity uncertainty, and claim uncertainty without exposing hidden model reasoning. Agent-authored Evidence is rejected by the profile derivation session.
+Persistence-owned IDs, hashes, timestamps, source spans, extractor context, confidence values, and revision details remain stored for application use but are not dumped into the normal terminal view. Agent-authored Evidence is rejected by the profile derivation session.
 
 ## Checks
 
-The CLI restart test verifies profile claim count, status, normalized content, Evidence/Interaction provenance, extractor context, and revision persistence. The profile session test verifies the original Evidence crosses the injected extractor seam.
+The CLI restart test verifies concise Evidence and Current-profile content survives restart and that internal persistence/extraction details are not printed. The profile session test verifies the original Evidence crosses the injected extractor seam.
 
-The full suite passes 18 tests.
+The full suite passes 19 tests.
 
 ## Deliberate omissions
 

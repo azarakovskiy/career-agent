@@ -1,9 +1,5 @@
 import { resolve } from "node:path";
-import type {
-	EvidenceItem,
-	InteractionTurn,
-	WorkspaceSnapshot,
-} from "../domain/evidence.js";
+import type { EvidenceItem, WorkspaceSnapshot } from "../domain/evidence.js";
 import {
 	deriveProfileClaimStatus,
 	deterministicProfileExtractor,
@@ -34,39 +30,11 @@ const defaultDatabasePath =
 	resolve(process.cwd(), "career-agent.sqlite");
 
 function renderEvidence(evidence: EvidenceItem): string[] {
-	return [
-		`Evidence: ${evidence.id}`,
-		`  Workspace: ${evidence.workspaceId}`,
-		`  Interaction turn: ${evidence.interactionTurnId}`,
-		`  Recorded at: ${evidence.recordedAt}`,
-		`  SHA-256: ${evidence.contentHash}`,
-		`  Authored by: ${evidence.authoredBy}`,
-		"  Content:",
-		evidence.contentSnapshot,
-	];
-}
-
-function renderInteractionTurn(turn: InteractionTurn): string[] {
-	return [
-		`Interaction turn: ${turn.id}`,
-		`  Workspace: ${turn.workspaceId}`,
-		`  Recorded at: ${turn.recordedAt}`,
-		"  User content:",
-		turn.userContent,
-	];
+	return [`  - ${evidence.contentSnapshot}`];
 }
 
 function renderSnapshot(snapshot: WorkspaceSnapshot): string {
-	const lines = [
-		`Workspace: ${snapshot.workspace.id}`,
-		`Interaction turns: ${snapshot.interactionTurns.length}`,
-	];
-
-	for (const turn of snapshot.interactionTurns) {
-		lines.push(...renderInteractionTurn(turn));
-	}
-
-	lines.push(`Evidence items: ${snapshot.evidenceItems.length}`);
+	const lines = [`Evidence items: ${snapshot.evidenceItems.length}`];
 	for (const evidence of snapshot.evidenceItems) {
 		lines.push(...renderEvidence(evidence));
 	}
@@ -74,55 +42,14 @@ function renderSnapshot(snapshot: WorkspaceSnapshot): string {
 	return `${lines.join("\n")}\n`;
 }
 
-function deriveProfileClaimConfidence(
-	provenance: CurrentProfileSnapshot["claims"][number]["provenance"],
-): number {
-	return Math.max(...provenance.map((item) => item.confidence));
-}
-
 function renderCurrentProfile(profile: CurrentProfileSnapshot): string {
-	const lines = [
-		`Current profile revision: ${profile.revision?.id ?? "none"}`,
-		`Profile claims: ${profile.claims.length}`,
-	];
-
-	if (profile.revision) {
-		lines.push(
-			`  Caused by Evidence: ${profile.revision.causeEvidenceId}`,
-			`  Extractor context: ${profile.revision.extractorContext}`,
-			`  Created at: ${profile.revision.createdAt}`,
-		);
-	}
+	const lines = [`Current profile: ${profile.claims.length} claims`];
 
 	for (const currentClaim of profile.claims) {
 		const status = deriveProfileClaimStatus(
 			currentClaim.provenance.map((item) => item.evidenceBasis),
 		);
-		const confidence = deriveProfileClaimConfidence(
-			currentClaim.provenance,
-		);
-		lines.push(
-			`Claim: ${currentClaim.claim.proposition}`,
-			`  Normalized: ${currentClaim.claim.normalizedProposition}`,
-			`  Status: ${status}`,
-			`  Confidence: ${confidence.toFixed(2)}`,
-			"  Provenance:",
-		);
-		for (const provenance of currentClaim.provenance) {
-			lines.push(
-				`    Evidence: ${provenance.evidenceId}`,
-				`    Interaction turn: ${provenance.interactionTurnId}`,
-				`    Recorded at: ${provenance.recordedAt}`,
-				`    Source observed at: ${provenance.sourceObservedAt ?? "unknown"}`,
-				`    Valid from: ${provenance.validFrom ?? "unknown"}`,
-				`    Valid to: ${provenance.validTo ?? "unknown"}`,
-				`    Relationship: ${provenance.relationship}`,
-				`    Source lines: ${provenance.sourceSpan.startLine}-${provenance.sourceSpan.endLine}`,
-				`    Basis: ${provenance.evidenceBasis}`,
-				`    Confidence: ${provenance.confidence.toFixed(2)}`,
-				`    Extractor context: ${provenance.extractorContext}`,
-			);
-		}
+		lines.push(`  - [${status}] ${currentClaim.claim.proposition}`);
 	}
 
 	return `${lines.join("\n")}\n`;
@@ -148,7 +75,7 @@ export class LocalCareerEvidenceApplication implements CareerEvidenceApplication
 		try {
 			const evidence = this.session.submitEvidence(content);
 			const profile = this.profileSession.deriveProfile(evidence);
-			return `Saved Evidence item: ${evidence.id}\n${renderCurrentProfile(profile)}`;
+			return `Evidence saved.\n${renderCurrentProfile(profile)}`;
 		} catch (error) {
 			return `Error: ${errorMessage(error)}\n`;
 		}
