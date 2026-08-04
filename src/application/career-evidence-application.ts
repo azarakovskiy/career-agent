@@ -5,13 +5,23 @@ import type {
 	WorkspaceSnapshot,
 } from "../domain/evidence.js";
 import {
+	deriveProfileClaimStatus,
+	deterministicProfileExtractor,
+	type CurrentProfileSnapshot,
+} from "../domain/profile.js";
+import {
 	SqliteWorkspaceRepository,
+	type ProfileRepository,
 	type WorkspaceRepository,
 } from "../persistence/workspace-repository.js";
 import {
 	LocalEvidenceSubmissionSession,
 	type EvidenceSubmissionSession,
 } from "../session/evidence-submission-session.js";
+import {
+	LocalProfileDerivationSession,
+	type ProfileDerivationSession,
+} from "../session/profile-derivation-session.js";
 
 export interface CareerEvidenceApplication {
 	listText(): string;
@@ -63,6 +73,49 @@ function renderSnapshot(snapshot: WorkspaceSnapshot): string {
 	return `${lines.join("\n")}\n`;
 }
 
+function renderCurrentProfile(profile: CurrentProfileSnapshot): string {
+	const lines = [
+		`Current profile revision: ${profile.revision?.id ?? "none"}`,
+		`Profile claims: ${profile.claims.length}`,
+	];
+
+	if (profile.revision) {
+		lines.push(
+			`  Caused by Evidence: ${profile.revision.causeEvidenceId}`,
+			`  Extractor context: ${profile.revision.extractorContext}`,
+			`  Created at: ${profile.revision.createdAt}`,
+		);
+	}
+
+	for (const currentClaim of profile.claims) {
+		const status = deriveProfileClaimStatus(
+			currentClaim.provenance.map((item) => item.evidenceBasis),
+		);
+		const confidence = Math.max(
+			...currentClaim.provenance.map((item) => item.confidence),
+		);
+		lines.push(
+			`Claim: ${currentClaim.claim.proposition}`,
+			`  Normalized: ${currentClaim.claim.normalizedProposition}`,
+			`  Status: ${status}`,
+			`  Confidence: ${confidence.toFixed(2)}`,
+			"  Provenance:",
+		);
+		for (const provenance of currentClaim.provenance) {
+			lines.push(
+				`    Evidence: ${provenance.evidenceId}`,
+				`    Interaction turn: ${provenance.interactionTurnId}`,
+				`    Source lines: ${provenance.sourceSpan.startLine}-${provenance.sourceSpan.endLine}`,
+				`    Basis: ${provenance.evidenceBasis}`,
+				`    Confidence: ${provenance.confidence.toFixed(2)}`,
+				`    Extractor context: ${provenance.extractorContext}`,
+			);
+		}
+	}
+
+	return `${lines.join("\n")}\n`;
+}
+
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -70,17 +123,20 @@ function errorMessage(error: unknown): string {
 export class LocalCareerEvidenceApplication implements CareerEvidenceApplication {
 	constructor(
 		private readonly repository: WorkspaceRepository,
+		private readonly profileRepository: ProfileRepository,
 		private readonly session: EvidenceSubmissionSession,
+		private readonly profileSession: ProfileDerivationSession,
 	) {}
 
 	listText(): string {
-		return renderSnapshot(this.repository.readSnapshot());
+		return `${renderSnapshot(this.repository.readSnapshot())}${renderCurrentProfile(this.profileRepository.readCurrentProfile())}`;
 	}
 
 	submitText(content: string): string {
 		try {
 			const evidence = this.session.submitEvidence(content);
-			return `Saved Evidence item: ${evidence.id}\n`;
+			const profile = this.profileSession.deriveProfile(evidence);
+			return `Saved Evidence item: ${evidence.id}\n${renderCurrentProfile(profile)}`;
 		} catch (error) {
 			return `Error: ${errorMessage(error)}\n`;
 		}
@@ -97,6 +153,11 @@ export function createCareerEvidenceApplication(
 	const repository = new SqliteWorkspaceRepository(databasePath);
 	return new LocalCareerEvidenceApplication(
 		repository,
+		repository,
 		new LocalEvidenceSubmissionSession(repository),
+		new LocalProfileDerivationSession(
+			repository,
+			deterministicProfileExtractor,
+		),
 	);
 }

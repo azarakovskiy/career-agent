@@ -18,8 +18,10 @@ test("migration runner records the versioned migration file", () => {
 			name: string;
 			checksum: string;
 		}>;
-		assert.equal(migration.length, 1);
+		assert.equal(migration.length, 2);
 		assert.equal(migration[0]?.version, 1);
+		assert.equal(migration[1]?.version, 2);
+		assert.equal(migration[1]?.name, "002-profile-claims");
 		assert.equal(migration[0]?.name, "001-initial-workspace");
 		assert.match(migration[0]?.checksum ?? "", /^[0-9a-f]{64}$/);
 	} finally {
@@ -40,7 +42,7 @@ test("migration runner refuses a schema newer than the application", () => {
 
 		assert.throws(
 			() => applyMigrations(database),
-			/Database schema version 99 is newer than this application supports \(1\)/,
+			/Database schema version 99 is newer than this application supports \(2\)/,
 		);
 	} finally {
 		database.close();

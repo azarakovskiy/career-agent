@@ -91,6 +91,22 @@ test("CLI persists pasted Evidence across process restart", async () => {
 		assert.match(firstRun.stdout, /Saved Evidence item:/);
 		assert.match(firstRun.stdout, /Interaction turns: 1/);
 		assert.match(firstRun.stdout, /Evidence items: 1/);
+		assert.match(
+			firstRun.stdout,
+			/Current profile revision: [0-9a-f-]{36}/,
+		);
+		assert.match(firstRun.stdout, /Profile claims: 2/);
+		assert.match(firstRun.stdout, /Status: Known/);
+		assert.match(firstRun.stdout, /Status: Unknown/);
+		assert.match(
+			firstRun.stdout,
+			/Normalized: designed and shipped a durable api/,
+		);
+		assert.match(firstRun.stdout, /Provenance:/);
+		assert.match(
+			firstRun.stdout,
+			/Extractor context: deterministic-line-v1/,
+		);
 		assert.match(firstRun.stdout, /User content:/);
 		assert.match(firstRun.stdout, new RegExp(contentHash));
 		assert.ok(firstRun.stdout.includes(content));
@@ -110,6 +126,22 @@ test("CLI persists pasted Evidence across process restart", async () => {
 		assert.match(reopenedRun.stdout, new RegExp(`Evidence: ${evidenceId}`));
 		assert.match(reopenedRun.stdout, /Interaction turns: 1/);
 		assert.match(reopenedRun.stdout, /Evidence items: 1/);
+		assert.match(
+			reopenedRun.stdout,
+			/Current profile revision: [0-9a-f-]{36}/,
+		);
+		assert.match(reopenedRun.stdout, /Profile claims: 2/);
+		assert.match(reopenedRun.stdout, /Status: Known/);
+		assert.match(reopenedRun.stdout, /Status: Unknown/);
+		assert.match(
+			reopenedRun.stdout,
+			/Normalized: designed and shipped a durable api/,
+		);
+		assert.match(reopenedRun.stdout, /Provenance:/);
+		assert.match(
+			reopenedRun.stdout,
+			/Extractor context: deterministic-line-v1/,
+		);
 		assert.match(reopenedRun.stdout, new RegExp(contentHash));
 		assert.ok(reopenedRun.stdout.includes(content));
 	} finally {

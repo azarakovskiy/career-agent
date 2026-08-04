@@ -58,6 +58,7 @@ export const workspaceQueries = {
 			c.proposition,
 			c.created_at AS claim_created_at,
 			pe.evidence_id,
+			et.recorded_at AS evidence_recorded_at,
 			et.interaction_turn_id,
 			pe.source_line_start,
 			pe.source_line_end,
@@ -69,5 +70,6 @@ export const workspaceQueries = {
 		 JOIN profile_claim_evidence pe ON pe.claim_id = c.id
 		 JOIN evidence_items et ON et.id = pe.evidence_id
 		 WHERE rc.revision_id = ?
-		 ORDER BY c.normalized_proposition, pe.evidence_id, pe.extractor_context`,
+		 ORDER BY c.normalized_proposition, evidence_recorded_at,
+			pe.evidence_id, pe.extractor_context`,
 } as const;
