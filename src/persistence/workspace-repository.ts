@@ -56,7 +56,9 @@ function validateSubmission(
 		turn.workspaceId !== workspaceId ||
 		evidence.workspaceId !== workspaceId
 	) {
-		throw new Error("Submission records must belong to the current Workspace");
+		throw new Error(
+			"Submission records must belong to the current Workspace",
+		);
 	}
 	if (evidence.interactionTurnId !== turn.id) {
 		throw new Error("Evidence must reference its Interaction turn");
@@ -66,7 +68,9 @@ function validateSubmission(
 	validateNonBlank(turn.userContent, "Interaction turn content");
 	validateNonBlank(evidence.contentSnapshot, "Evidence content snapshot");
 	if (!sha256Pattern.test(evidence.contentHash)) {
-		throw new Error("Evidence content hash must be a lowercase SHA-256 hash");
+		throw new Error(
+			"Evidence content hash must be a lowercase SHA-256 hash",
+		);
 	}
 	const actualHash = createHash("sha256")
 		.update(evidence.contentSnapshot, "utf8")
@@ -99,7 +103,12 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
 		this.database.transaction(() => {
 			this.database
 				.prepare(workspaceQueries.insertInteractionTurn)
-				.run(turn.id, turn.workspaceId, turn.recordedAt, turn.userContent);
+				.run(
+					turn.id,
+					turn.workspaceId,
+					turn.recordedAt,
+					turn.userContent,
+				);
 			this.database
 				.prepare(workspaceQueries.insertEvidenceItem)
 				.run(
@@ -117,21 +126,21 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
 		const interactionTurns = this.database
 			.prepare(workspaceQueries.listInteractionTurns)
 			.all(this.workspace.id) as Array<{
-				id: string;
-				workspace_id: string;
-				recorded_at: string;
-				user_content: string;
-			}>;
+			id: string;
+			workspace_id: string;
+			recorded_at: string;
+			user_content: string;
+		}>;
 		const evidenceItems = this.database
 			.prepare(workspaceQueries.listEvidenceItems)
 			.all(this.workspace.id) as Array<{
-				id: string;
-				workspace_id: string;
-				interaction_turn_id: string;
-				recorded_at: string;
-				content_snapshot: string;
-				content_hash: string;
-			}>;
+			id: string;
+			workspace_id: string;
+			interaction_turn_id: string;
+			recorded_at: string;
+			content_snapshot: string;
+			content_hash: string;
+		}>;
 
 		return {
 			workspace: this.getWorkspace(),

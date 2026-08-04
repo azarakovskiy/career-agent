@@ -27,13 +27,18 @@ function loadMigrationFiles(): MigrationFile[] {
 				throw new Error(`Invalid migration filename: ${fileName}`);
 			}
 
-			const sql = readFileSync(`${migrationDirectory}/${fileName}`, "utf8");
+			const sql = readFileSync(
+				`${migrationDirectory}/${fileName}`,
+				"utf8",
+			);
 			return [
 				{
 					version: Number(match[1]),
 					name: basename(fileName, ".sql"),
 					sql,
-					checksum: createHash("sha256").update(sql, "utf8").digest("hex"),
+					checksum: createHash("sha256")
+						.update(sql, "utf8")
+						.digest("hex"),
 				},
 			];
 		})
@@ -67,10 +72,10 @@ export function applyMigrations(database: Database): void {
 			"SELECT version, name, checksum FROM schema_migrations ORDER BY version",
 		)
 		.all() as Array<{
-			version: number;
-			name: string;
-			checksum: string;
-		}>;
+		version: number;
+		name: string;
+		checksum: string;
+	}>;
 	const currentVersion = applied.at(-1)?.version ?? 0;
 	const newestVersion = migrations.at(-1)?.version ?? 0;
 

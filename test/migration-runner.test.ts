@@ -14,10 +14,10 @@ test("migration runner records the versioned migration file", () => {
 				"SELECT version, name, checksum FROM schema_migrations ORDER BY version",
 			)
 			.all() as Array<{
-				version: number;
-				name: string;
-				checksum: string;
-			}>;
+			version: number;
+			name: string;
+			checksum: string;
+		}>;
 		assert.equal(migration.length, 1);
 		assert.equal(migration[0]?.version, 1);
 		assert.equal(migration[0]?.name, "001-initial-workspace");
@@ -33,7 +33,9 @@ test("migration runner refuses a schema newer than the application", () => {
 	try {
 		applyMigrations(database);
 		database
-			.prepare("UPDATE schema_migrations SET version = ? WHERE version = ?")
+			.prepare(
+				"UPDATE schema_migrations SET version = ? WHERE version = ?",
+			)
 			.run(99, 1);
 
 		assert.throws(

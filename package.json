@@ -10,7 +10,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-migrations.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check": "npm run typecheck && npm test",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.mjs\" \"*.json\" \".vscode/*.json\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.mjs\" \"*.json\" \".vscode/*.json\"",
+    "check": "npm run format:check && npm run typecheck && npm test",
     "dev": "npm run build && npm start",
     "start": "node dist/src/cli.js",
     "test": "npm run build && node --test dist/test/*.test.js"
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "prettier": "3.9.6",
     "typescript": "^7.0.2"
   }
 }

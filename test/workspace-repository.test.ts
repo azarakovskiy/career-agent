@@ -86,7 +86,10 @@ test("repeating a submission stores distinct Evidence and failed writes leave no
 			workspaceId: workspace.id,
 		};
 		const firstEvidence = {
-			...makeEvidence("00000000-0000-4000-8000-000000000003", firstTurn.id),
+			...makeEvidence(
+				"00000000-0000-4000-8000-000000000003",
+				firstTurn.id,
+			),
 			workspaceId: workspace.id,
 		};
 		repository.recordSubmission(firstTurn, firstEvidence);
@@ -96,7 +99,10 @@ test("repeating a submission stores distinct Evidence and failed writes leave no
 			workspaceId: workspace.id,
 		};
 		const secondEvidence = {
-			...makeEvidence("00000000-0000-4000-8000-000000000005", secondTurn.id),
+			...makeEvidence(
+				"00000000-0000-4000-8000-000000000005",
+				secondTurn.id,
+			),
 			workspaceId: workspace.id,
 		};
 		repository.recordSubmission(secondTurn, secondEvidence);
