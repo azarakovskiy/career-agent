@@ -23,7 +23,7 @@ No ORM, web UI, RAG/retrieval library, provider SDK, or test framework is part o
 
 - `src/cli.ts` is the thin interactive process adapter. It currently owns only startup text, a prompt, and clean exit commands.
 - `test/cli.test.ts` verifies the process boundary by spawning the compiled CLI.
-- Evidence, Profile claim, persistence repositories, migrations, and analysis modules are intentionally not present yet.
+- Evidence items, Profile claims, persistence repositories, migrations, and analysis modules are intentionally not present yet.
 - The future session seam belongs between this CLI adapter and the later domain/persistence implementation; this stage does not define that domain behavior.
 
 ## Local commands
