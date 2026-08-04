@@ -1,3 +1,5 @@
+# Agent instructions
+
 ## Agent skills
 
 ### Issue tracker
@@ -11,3 +13,7 @@ Use the default canonical triage labels: `needs-triage`, `needs-info`, `ready-fo
 ### Domain docs
 
 This is a single-context repo, with domain docs at the root and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+
+## Coding standards
+
+See `docs/agents/coding-standards.md` for file/function boundaries, repository boundaries, and refactoring scope.
